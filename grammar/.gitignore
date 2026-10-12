@@ -1,0 +1,10 @@
+node_modules/
+*.dll
+*.so
+*.dylib
+*.obj
+*.lib
+*.exp
+*.pdb
+*.exe
+.cache/

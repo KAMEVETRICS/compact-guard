@@ -1,0 +1,360 @@
+==================
+Pragma
+==================
+pragma language_version >= 0.26.0 && < 0.27 || (!0.25);
+---
+
+(source_file
+  (pragma
+    (identifier)
+    (version_binary_expression
+      (version_binary_expression
+        (version_constraint
+          (version_literal))
+        (version_constraint
+          (version_literal)))
+      (version_group
+        (version_constraint
+          (version_literal))))))
+
+==================
+Imports includes and exports
+==================
+include "common.compact";
+import CompactStandardLibrary;
+import { a, b as c, } from "library"<10, Bytes<32>> prefix Lib_;
+export { a, c, };
+---
+
+(source_file
+  (include_declaration
+    (string_literal))
+  (import_declaration
+    (identifier))
+  (import_declaration
+    (import_selection
+      (import_specifier
+        (identifier))
+      (import_specifier
+        (identifier)
+        (identifier)))
+    (string_literal)
+    (generic_arguments
+      (number_literal)
+      (bytes_type
+        (number_literal)))
+    (identifier))
+  (export_declaration
+    (identifier)
+    (identifier)))
+
+==================
+Ledger and sealed ledger
+==================
+ledger count: Counter;
+export sealed ledger key: Bytes<32>;
+---
+
+(source_file
+  (ledger_declaration
+    (identifier)
+    (type_reference
+      (identifier)))
+  (ledger_declaration
+    (identifier)
+    (bytes_type
+      (number_literal))))
+
+==================
+Contract implements
+==================
+contract implements Remote;
+---
+(source_file
+  (implements_declaration
+    (type_reference
+      (identifier))))
+
+==================
+Witness and generic circuits
+==================
+export witness secret<#N, T>(x: Vector<N, T>): Bytes<32>;
+pure circuit identity<T>(x: T): T { return x; }
+export circuit write(x: Field): [] { key = disclose(hash<10, Bytes<32>>(x)); }
+---
+
+(source_file
+  (witness_declaration
+    (identifier)
+    (generic_parameters
+      (generic_parameter
+        (identifier))
+      (generic_parameter
+        (identifier)))
+    (simple_parameter_list
+      (simple_parameter
+        (identifier)
+        (vector_type
+          (identifier)
+          (type_reference
+            (identifier)))))
+    (bytes_type
+      (number_literal)))
+  (circuit_declaration
+    (identifier)
+    (generic_parameters
+      (generic_parameter
+        (identifier)))
+    (parameter_list
+      (typed_parameter
+        (identifier)
+        (type_reference
+          (identifier))))
+    (type_reference
+      (identifier))
+    (block
+      (return_statement
+        (identifier))))
+  (circuit_declaration
+    (identifier)
+    (parameter_list
+      (typed_parameter
+        (identifier)
+        (primitive_type)))
+    (tuple_type)
+    (block
+      (expression_statement
+        (assignment_expression
+          (identifier)
+          (disclose_expression
+            (call_expression
+              (generic_function
+                (identifier)
+                (generic_arguments
+                  (number_literal)
+                  (bytes_type
+                    (number_literal))))
+              (argument_list
+                (identifier)))))))))
+
+==================
+Constructor and destructuring
+==================
+constructor([a,, b,]: [Field, Field, Field], {key: k, value}: Pair) {
+  const [x,,y] = [a, 0, b], {key, value: v}: Pair = Pair{key: k, value};
+  count.increment(1);
+}
+---
+
+(source_file
+  (constructor_declaration
+    (parameter_list
+      (typed_parameter
+        (tuple_pattern
+          (identifier)
+          (identifier))
+        (tuple_type
+          (primitive_type)
+          (primitive_type)
+          (primitive_type)))
+      (typed_parameter
+        (struct_pattern
+          (field_pattern
+            (identifier)
+            (identifier))
+          (field_pattern
+            (identifier)))
+        (type_reference
+          (identifier))))
+    (block
+      (const_declaration
+        (const_binding
+          (tuple_pattern
+            (identifier)
+            (identifier))
+          (tuple_literal
+            (identifier)
+            (number_literal)
+            (identifier)))
+        (const_binding
+          (struct_pattern
+            (field_pattern
+              (identifier))
+            (field_pattern
+              (identifier)
+              (identifier)))
+          (type_reference
+            (identifier))
+          (struct_literal
+            (type_reference
+              (identifier))
+            (field_initializer
+              (identifier)
+              (identifier))
+            (identifier))))
+      (expression_statement
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (argument_list
+            (number_literal)))))))
+
+==================
+Struct enum module and contract
+==================
+export module Utils<#N, T> {
+  export struct Pair { key: Bytes<32>; value: T; };
+  struct Empty {}
+  struct Other { a: Field, b: Boolean, }
+  export enum Choice { yes, no, }
+  export contract Remote { pure circuit read(x: Field): Boolean; circuit write(): []; };
+  contract Comma { circuit a(): [], circuit b(): Field, }
+}
+---
+
+(source_file
+  (module_declaration
+    (identifier)
+    (generic_parameters
+      (generic_parameter
+        (identifier))
+      (generic_parameter
+        (identifier)))
+    (module_body
+      (struct_declaration
+        (identifier)
+        (struct_body
+          (struct_field
+            (identifier)
+            (bytes_type
+              (number_literal)))
+          (struct_field
+            (identifier)
+            (type_reference
+              (identifier)))))
+      (struct_declaration
+        (identifier)
+        (struct_body))
+      (struct_declaration
+        (identifier)
+        (struct_body
+          (struct_field
+            (identifier)
+            (primitive_type))
+          (struct_field
+            (identifier)
+            (primitive_type))))
+      (enum_declaration
+        (identifier)
+        (enum_body
+          (identifier)
+          (identifier)))
+      (contract_declaration
+        (identifier)
+        (contract_body
+          (circuit_signature
+            (identifier)
+            (simple_parameter_list
+              (simple_parameter
+                (identifier)
+                (primitive_type)))
+            (primitive_type))
+          (circuit_signature
+            (identifier)
+            (simple_parameter_list)
+            (tuple_type))))
+      (contract_declaration
+        (identifier)
+        (contract_body
+          (circuit_signature
+            (identifier)
+            (simple_parameter_list)
+            (tuple_type))
+          (circuit_signature
+            (identifier)
+            (simple_parameter_list)
+            (primitive_type)))))))
+
+==================
+All types and aliases
+==================
+export type Alias<T> = Vector<10, T>;
+new type Tag = Bytes<32>;
+ledger a: Uint<64>;
+ledger b: Uint<0..255>;
+ledger c: Bytes<32>;
+ledger d: Vector<n, Field>;
+ledger e: Boolean;
+ledger f: Opaque<"string">;
+ledger g: MerkleTree<32, Bytes<32>>;
+ledger h: HistoricMerkleTree<32, Leaf>;
+ledger i: [Field, Boolean, Alias<Bytes<32>>,];
+---
+
+(source_file
+  (type_alias_declaration
+    (identifier)
+    (generic_parameters
+      (generic_parameter
+        (identifier)))
+    (vector_type
+      (number_literal)
+      (type_reference
+        (identifier))))
+  (type_alias_declaration
+    (identifier)
+    (bytes_type
+      (number_literal)))
+  (ledger_declaration
+    (identifier)
+    (uint_type
+      (number_literal)))
+  (ledger_declaration
+    (identifier)
+    (uint_type
+      (type_range
+        (number_literal)
+        (number_literal))))
+  (ledger_declaration
+    (identifier)
+    (bytes_type
+      (number_literal)))
+  (ledger_declaration
+    (identifier)
+    (vector_type
+      (identifier)
+      (primitive_type)))
+  (ledger_declaration
+    (identifier)
+    (primitive_type))
+  (ledger_declaration
+    (identifier)
+    (opaque_type
+      (string_literal)))
+  (ledger_declaration
+    (identifier)
+    (type_reference
+      (identifier)
+      (generic_arguments
+        (number_literal)
+        (bytes_type
+          (number_literal)))))
+  (ledger_declaration
+    (identifier)
+    (type_reference
+      (identifier)
+      (generic_arguments
+        (number_literal)
+        (type_reference
+          (identifier)))))
+  (ledger_declaration
+    (identifier)
+    (tuple_type
+      (primitive_type)
+      (primitive_type)
+      (type_reference
+        (identifier)
+        (generic_arguments
+          (bytes_type
+            (number_literal)))))))

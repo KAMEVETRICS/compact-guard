@@ -1,0 +1,433 @@
+==================
+Statements
+==================
+circuit statements(x: Field): [] {
+  if (true) if (false) x = 1; else x = 2;
+  if (x == 0) { return; } else { x += 1; }
+  for (const i of 0..10) { x -= i; }
+  for (const i of first..last) x = i;
+  for (const item of [1,2,3]) { item, x; }
+  { const y: Field = 1, z = 2; }
+  return;
+}
+---
+
+(source_file
+  (circuit_declaration
+    (identifier)
+    (parameter_list
+      (typed_parameter
+        (identifier)
+        (primitive_type)))
+    (tuple_type)
+    (block
+      (if_statement
+        (boolean_literal)
+        (if_statement
+          (boolean_literal)
+          (expression_statement
+            (assignment_expression
+              (identifier)
+              (number_literal)))
+          (expression_statement
+            (assignment_expression
+              (identifier)
+              (number_literal)))))
+      (if_statement
+        (binary_expression
+          (identifier)
+          (number_literal))
+        (block
+          (return_statement))
+        (block
+          (expression_statement
+            (assignment_expression
+              (identifier)
+              (number_literal)))))
+      (for_statement
+        (identifier)
+        (range_expression
+          (number_literal)
+          (number_literal))
+        (block
+          (expression_statement
+            (assignment_expression
+              (identifier)
+              (identifier)))))
+      (for_statement
+        (identifier)
+        (range_expression
+          (identifier)
+          (identifier))
+        (expression_statement
+          (assignment_expression
+            (identifier)
+            (identifier))))
+      (for_statement
+        (identifier)
+        (tuple_literal
+          (number_literal)
+          (number_literal)
+          (number_literal))
+        (block
+          (expression_statement
+            (sequence_expression
+              (identifier)
+              (identifier)))))
+      (block
+        (const_declaration
+          (const_binding
+            (identifier)
+            (primitive_type)
+            (number_literal))
+          (const_binding
+            (identifier)
+            (number_literal))))
+      (return_statement))))
+
+==================
+Operators and casts
+==================
+pure circuit ops(a: Field, b: Field): Boolean {
+  a = b = 1;
+  a += b; a -= b;
+  const arithmetic = a + b * 2 - 1 as Uint<64> as Field;
+  const compare = a < b || a <= b && a >= b || a > b;
+  return !(a == b) && a != b ? true : false;
+}
+---
+
+(source_file
+  (circuit_declaration
+    (identifier)
+    (parameter_list
+      (typed_parameter
+        (identifier)
+        (primitive_type))
+      (typed_parameter
+        (identifier)
+        (primitive_type)))
+    (primitive_type)
+    (block
+      (expression_statement
+        (assignment_expression
+          (identifier)
+          (assignment_expression
+            (identifier)
+            (number_literal))))
+      (expression_statement
+        (assignment_expression
+          (identifier)
+          (identifier)))
+      (expression_statement
+        (assignment_expression
+          (identifier)
+          (identifier)))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (cast_expression
+            (cast_expression
+              (binary_expression
+                (binary_expression
+                  (identifier)
+                  (binary_expression
+                    (identifier)
+                    (number_literal)))
+                (number_literal))
+              (uint_type
+                (number_literal)))
+            (primitive_type))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (binary_expression
+            (binary_expression
+              (binary_expression
+                (identifier)
+                (identifier))
+              (binary_expression
+                (binary_expression
+                  (identifier)
+                  (identifier))
+                (binary_expression
+                  (identifier)
+                  (identifier))))
+            (binary_expression
+              (identifier)
+              (identifier)))))
+      (return_statement
+        (conditional_expression
+          (binary_expression
+            (unary_expression
+              (parenthesized_expression
+                (binary_expression
+                  (identifier)
+                  (identifier))))
+            (binary_expression
+              (identifier)
+              (identifier)))
+          (boolean_literal)
+          (boolean_literal))))))
+
+==================
+Literals calls and builtins
+==================
+circuit expressions(): [] {
+  const text = "escaped\ntext", single = 'text', n = 123;
+  const t = [1, true, ...xs,], v = [1, 2] as Vector<2, Field>;
+  const p = Pair<Bytes<32>>{key: default<Bytes<32>>, value, ...rest,};
+  const a = data[1].field, b = data.lookup(1).value;
+  const c = f<10, Bytes<32>>(a, b,);
+  assert(disclose(a) == b, "message");
+  const padded = pad(32, "domain"), zero = default<[Field, Boolean]>;
+  const sliced = slice<2>(xs, 1);
+  const result = (a, b);
+  return [];
+}
+---
+
+(source_file
+  (circuit_declaration
+    (identifier)
+    (parameter_list)
+    (tuple_type)
+    (block
+      (const_declaration
+        (const_binding
+          (identifier)
+          (string_literal
+            (escape_sequence)))
+        (const_binding
+          (identifier)
+          (string_literal))
+        (const_binding
+          (identifier)
+          (number_literal)))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (tuple_literal
+            (number_literal)
+            (boolean_literal)
+            (spread_element
+              (identifier))))
+        (const_binding
+          (identifier)
+          (cast_expression
+            (tuple_literal
+              (number_literal)
+              (number_literal))
+            (vector_type
+              (number_literal)
+              (primitive_type)))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (struct_literal
+            (type_reference
+              (identifier)
+              (generic_arguments
+                (bytes_type
+                  (number_literal))))
+            (field_initializer
+              (identifier)
+              (default_expression
+                (bytes_type
+                  (number_literal))))
+            (identifier)
+            (spread_element
+              (identifier)))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (member_expression
+            (index_expression
+              (identifier)
+              (number_literal))
+            (identifier)))
+        (const_binding
+          (identifier)
+          (member_expression
+            (call_expression
+              (member_expression
+                (identifier)
+                (identifier))
+              (argument_list
+                (number_literal)))
+            (identifier))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (call_expression
+            (generic_function
+              (identifier)
+              (generic_arguments
+                (number_literal)
+                (bytes_type
+                  (number_literal))))
+            (argument_list
+              (identifier)
+              (identifier)))))
+      (expression_statement
+        (assert_expression
+          (binary_expression
+            (disclose_expression
+              (identifier))
+            (identifier))
+          (string_literal)))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (pad_expression
+            (number_literal)
+            (string_literal)))
+        (const_binding
+          (identifier)
+          (default_expression
+            (tuple_type
+              (primitive_type)
+              (primitive_type)))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (slice_expression
+            (number_literal)
+            (identifier)
+            (number_literal))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (parenthesized_expression
+            (sequence_expression
+              (identifier)
+              (identifier)))))
+      (return_statement
+        (tuple_literal)))))
+
+==================
+Map fold and arrow functions
+==================
+pure circuit higher(xs: Vector<2, Field>): Field {
+  const a = map(f<10, Bytes<32>>, xs, ys,);
+  const b = map((x: Field): Field => x + 1, xs);
+  const c = map(([x, y], {a: z}) => { return x; }, xs, ys);
+  const d = ((x: Field) => x)(1);
+  return fold((add), 0, xs,);
+}
+---
+
+(source_file
+  (circuit_declaration
+    (identifier)
+    (parameter_list
+      (typed_parameter
+        (identifier)
+        (vector_type
+          (number_literal)
+          (primitive_type))))
+    (primitive_type)
+    (block
+      (const_declaration
+        (const_binding
+          (identifier)
+          (map_expression
+            (generic_function
+              (identifier)
+              (generic_arguments
+                (number_literal)
+                (bytes_type
+                  (number_literal))))
+            (identifier)
+            (identifier))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (map_expression
+            (arrow_function
+              (arrow_parameter_list
+                (parameter
+                  (identifier)
+                  (primitive_type)))
+              (primitive_type)
+              (binary_expression
+                (identifier)
+                (number_literal)))
+            (identifier))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (map_expression
+            (arrow_function
+              (arrow_parameter_list
+                (parameter
+                  (tuple_pattern
+                    (identifier)
+                    (identifier)))
+                (parameter
+                  (struct_pattern
+                    (field_pattern
+                      (identifier)
+                      (identifier)))))
+              (block
+                (return_statement
+                  (identifier))))
+            (identifier)
+            (identifier))))
+      (const_declaration
+        (const_binding
+          (identifier)
+          (call_expression
+            (parenthesized_expression
+              (arrow_function
+                (arrow_parameter_list
+                  (parameter
+                    (identifier)
+                    (primitive_type)))
+                (identifier)))
+            (argument_list
+              (number_literal)))))
+      (return_statement
+        (fold_expression
+          (parenthesized_expression
+            (identifier))
+          (number_literal)
+          (identifier))))))
+
+==================
+Comments
+==================
+// line comment
+/* block
+ comment */
+circuit comments(): [] { return; /* trailing */ }
+---
+
+(source_file
+  (comment)
+  (comment)
+  (circuit_declaration
+    (identifier)
+    (parameter_list)
+    (tuple_type)
+    (block
+      (return_statement)
+      (comment))))
+
+==================
+Bytes literals and emit
+==================
+circuit events(): [] { emit(Bytes[1, ...rest,]); }
+---
+(source_file
+  (circuit_declaration
+    (identifier)
+    (parameter_list)
+    (tuple_type)
+    (block
+      (expression_statement
+        (emit_expression
+          (bytes_literal
+            (number_literal)
+            (spread_element
+              (identifier))))))))
