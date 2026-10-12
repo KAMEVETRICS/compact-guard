@@ -1,0 +1,7 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+witness secret(): Bytes<32>;
+export circuit derive(): Bytes<32> {
+  return disclose(persistentHash<Bytes<32>>(secret()));
+}

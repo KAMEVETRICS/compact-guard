@@ -1,0 +1,8 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+struct Profile { age: Uint<8>; recoverySecret: Bytes<32>; }
+witness profile(): Profile;
+export circuit publishedAge(): Uint<8> {
+  return disclose(profile().age);
+}

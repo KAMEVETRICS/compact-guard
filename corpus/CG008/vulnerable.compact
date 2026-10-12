@@ -1,0 +1,10 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+export ledger used: Set<Bytes<32>>;
+export ledger claimed: Boolean;
+witness claimSecret(): Bytes<32>;
+// compact-guard: one-time claim
+export circuit claim(): [] {
+  claimed = true;
+}

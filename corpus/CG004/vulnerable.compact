@@ -1,0 +1,10 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+export ledger members: Set<Bytes<32>>;
+witness memberSecret(): Bytes<32>;
+constructor(member: Bytes<32>) { members.insert(disclose(member)); }
+export circuit authorized(): Boolean {
+  const member = persistentHash<Vector<2, Bytes<32>>>([pad(32, "cg:member"), memberSecret()]);
+  return members.member(disclose(member));
+}

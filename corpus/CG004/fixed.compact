@@ -1,0 +1,13 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+export ledger members: MerkleTree<8, Bytes<32>>;
+witness memberSecret(): Bytes<32>;
+witness memberPath(): MerkleTreePath<8, Bytes<32>>;
+constructor(member: Bytes<32>) { members.insert(disclose(member)); }
+export circuit authorized(): Boolean {
+  const p = memberPath();
+  const member = persistentHash<Vector<2, Bytes<32>>>([pad(32, "cg:member"), memberSecret()]);
+  assert(p.leaf == member, "leaf required");
+  return members.checkRoot(disclose(merkleTreePathRoot<8, Bytes<32>>(p)));
+}

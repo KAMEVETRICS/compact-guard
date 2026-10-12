@@ -1,0 +1,10 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+export ledger owner: ZswapCoinPublicKey;
+export ledger value: Field;
+constructor(admin: ZswapCoinPublicKey) { owner = disclose(admin); }
+export circuit change(next: Field): [] {
+  assert(ownPublicKey() == owner, "owner required");
+  value = disclose(next);
+}

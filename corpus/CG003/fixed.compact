@@ -1,0 +1,11 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+witness opening(): Bytes<32>;
+witness vote(): Boolean;
+export ledger first: Bytes<32>;
+export ledger second: Bytes<32>;
+export circuit publish(): [] {
+  first = disclose(persistentCommit<Boolean>(vote(), opening()));
+  second = disclose(persistentCommit<Boolean>(vote(), opening()));
+}

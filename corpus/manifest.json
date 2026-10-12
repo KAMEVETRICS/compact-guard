@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "CG001",
+      "rule": "CG001",
+      "vulnerable": "CG001/vulnerable.compact",
+      "fixed": "CG001/fixed.compact",
+      "description": "Forged caller identity",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG001"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG001"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG002",
+      "rule": "CG002",
+      "vulnerable": "CG002/vulnerable.compact",
+      "fixed": "CG002/fixed.compact",
+      "description": "Guessable Boolean hash",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG002"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG002"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG003",
+      "rule": "CG003",
+      "vulnerable": "CG003/vulnerable.compact",
+      "fixed": "CG003/fixed.compact",
+      "description": "Reused commitment opening",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG003"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG003"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG004",
+      "rule": "CG004",
+      "vulnerable": "CG004/vulnerable.compact",
+      "fixed": "CG004/fixed.compact",
+      "description": "Private membership query",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG004"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG004"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG005",
+      "rule": "CG005",
+      "vulnerable": "CG005/vulnerable.compact",
+      "fixed": "CG005/fixed.compact",
+      "description": "Unbound Merkle leaf",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG005"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG005"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG006",
+      "rule": "CG006",
+      "vulnerable": "CG006/vulnerable.compact",
+      "fixed": "CG006/fixed.compact",
+      "description": "Missing hash domain",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG006"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG006"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG007",
+      "rule": "CG007",
+      "vulnerable": "CG007/vulnerable.compact",
+      "fixed": "CG007/fixed.compact",
+      "description": "Excess profile disclosure",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG007"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG007"
+          ]
+        }
+      },
+      "compilerVerified": false
+    },
+    {
+      "id": "CG008",
+      "rule": "CG008",
+      "vulnerable": "CG008/vulnerable.compact",
+      "fixed": "CG008/fixed.compact",
+      "description": "Replayable one-time claim",
+      "expected": {
+        "vulnerable": {
+          "includes": [
+            "CG008"
+          ]
+        },
+        "fixed": {
+          "excludes": [
+            "CG008"
+          ]
+        }
+      },
+      "compilerVerified": false
+    }
+  ]
+}

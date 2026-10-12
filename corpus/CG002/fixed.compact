@@ -1,0 +1,9 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+witness vote(): Boolean;
+witness freshRandomness(): Bytes<32>;
+export ledger published: Bytes<32>;
+export circuit publish(): [] {
+  published = disclose(persistentCommit<Boolean>(vote(), freshRandomness()));
+}

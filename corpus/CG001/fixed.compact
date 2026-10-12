@@ -1,0 +1,12 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+export ledger owner: Bytes<32>;
+export ledger value: Field;
+witness ownerSecret(): Bytes<32>;
+constructor(adminHash: Bytes<32>) { owner = disclose(adminHash); }
+export circuit change(next: Field): [] {
+  const derived = persistentHash<Vector<2, Bytes<32>>>([pad(32, "cg:owner"), ownerSecret()]);
+  assert(derived == owner, "owner required");
+  value = disclose(next);
+}

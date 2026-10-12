@@ -1,0 +1,13 @@
+pragma language_version 0.26;
+import CompactStandardLibrary;
+
+export ledger used: Set<Bytes<32>>;
+export ledger claimed: Boolean;
+witness claimSecret(): Bytes<32>;
+// compact-guard: one-time claim
+export circuit claim(): [] {
+  const n = persistentHash<Vector<2, Bytes<32>>>([pad(32, "cg:claim:nullifier"), claimSecret()]);
+  assert(!used.member(disclose(n)), "already claimed");
+  used.insert(disclose(n));
+  claimed = true;
+}

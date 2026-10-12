@@ -1,0 +1,11 @@
+{
+  "name": "compact-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/analyzer"],
+  "scripts": {
+    "build": "npm run build --workspace @compact-guard/analyzer",
+    "test": "npm run test --workspace @compact-guard/analyzer && npm --prefix grammar run test:runtime"
+  }
+}
