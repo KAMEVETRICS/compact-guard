@@ -54,8 +54,10 @@ published parser commit:
 
 ## Remaining validation
 
-The corpus has not been compiled or executed with the Compact compiler/runtime.
-The Windows host lacks the required compiler/WSL setup. All manifest entries
-retain `compilerVerified: false`. There are no exploit-evidence claims.
+2026-10-13: all 16 corpus files compile with compiler 0.31.1 (language 0.23)
+under WSL; see [CORPUS_COMPILE_LOG.md](CORPUS_COMPILE_LOG.md). The pragma was
+changed from 0.26 to 0.23 because 0.31.1 rejects 0.26; no other source changed.
+All manifest entries now have `compilerVerified: true`. The corpus has not been
+executed with the runtime yet, so there are still no exploit-evidence claims.
 Cross-file imports, generic substitution and the bounded/heuristic analysis
 limits are described in [the analyzer README](../packages/analyzer/README.md).

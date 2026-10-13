@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyzeSource, parseSource } from '../dist/index.js';
-const pre = 'pragma language_version 0.26; import CompactStandardLibrary;\n';
+const pre = 'pragma language_version 0.23; import CompactStandardLibrary;\n';
 const scan = source => analyzeSource(pre + source, 'regression.compact');
 const has = (result, rule) => result.findings.some(f => f.rule === rule);
 

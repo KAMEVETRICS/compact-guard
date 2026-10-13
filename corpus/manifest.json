@@ -19,7 +19,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG002",
@@ -39,7 +39,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG003",
@@ -59,7 +59,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG004",
@@ -79,7 +79,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG005",
@@ -99,7 +99,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG006",
@@ -119,7 +119,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG007",
@@ -139,7 +139,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     },
     {
       "id": "CG008",
@@ -159,7 +159,7 @@
           ]
         }
       },
-      "compilerVerified": false
+      "compilerVerified": true
     }
   ]
 }

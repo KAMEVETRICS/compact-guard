@@ -1,7 +1,9 @@
 # Vulnerable / fixed corpus
 
 Eight original pairs target PLAN.md's CG001–CG008. Every `.compact` file is
-self-contained, targets language 0.26, and parses through the committed WASM.
+self-contained, targets language 0.23 (the version supported by compiler
+0.31.1, which the Midnight compatibility matrix pins for Preview and Preprod),
+and parses through the committed WASM.
 `manifest.json` version 1 records paths and expected presence/absence of the
 target rule. Additional rules may fire: a fixed member addresses its pair's
 target issue, not every security concern in a complete application.
@@ -41,11 +43,11 @@ Run `npm test` at the root to verify all pairs against the analyzer. Run
 
 ## Validation status
 
-The fixtures are parser/analyzer tests, not deployed contracts or reproduced
-exploits. `compilerVerified: false` is explicit for every case. The Compact
-compiler requires a supported environment; this Windows host has no WSL
-toolchain. Compiler type checking, generated witness implementations and
-off-chain execution remain to be verified by the attack-harness task.
+All 16 files compile with `compact compile --skip-zk` on compiler 0.31.1
+(`scripts/compile-corpus.sh`, log in `docs/CORPUS_COMPILE_LOG.md`), so every
+manifest entry has `compilerVerified: true`. They are still not deployed
+contracts or reproduced exploits: witness implementations and off-chain
+execution remain to be verified by the attack-harness task.
 
 API signatures were checked against the official
 [standard-library exports](https://docs.midnight.network/compact/standard-library/exports.md).

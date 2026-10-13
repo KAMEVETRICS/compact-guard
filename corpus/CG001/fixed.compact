@@ -1,4 +1,4 @@
-pragma language_version 0.26;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger owner: Bytes<32>;

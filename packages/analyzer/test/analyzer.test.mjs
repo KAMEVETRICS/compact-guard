@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { analyzeSource, analyzeDirectory } from '../dist/index.js';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-const pre = 'pragma language_version 0.26; import CompactStandardLibrary;\n';
+const pre = 'pragma language_version 0.23; import CompactStandardLibrary;\n';
 const analyze = source => analyzeSource(pre + source, 'test.compact');
 const has = (result, rule) => result.findings.some(f => f.rule === rule);
 
