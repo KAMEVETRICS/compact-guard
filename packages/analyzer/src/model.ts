@@ -16,6 +16,9 @@ export interface Value {
   id: string; type: TypeInfo; origins: Origin[]; bits?: number; literal?: string | number | boolean;
   members?: Record<string, Value>; domain: boolean; ownKey: boolean;
   transforms: string[]; predicate?: Predicate; pathLeaves: string[]; callable?: IRNode;
+  // A type-based entropy class, not a proof of randomness. Only direct crypto
+  // outputs carry protectedKey; transformation history alone cannot hide raw data.
+  highEntropy?: boolean; symbol?: string; protectedKey?: string; disclosed?: boolean;
 }
 export interface Predicate { kind: 'eq' | 'neq' | 'not' | 'and' | 'or' | 'member'; values: Value[]; target?: string }
 export interface Event {
@@ -36,6 +39,7 @@ export function summary(value: Value): ValueSummary { return { type: value.type.
 export function unknown(id: string, from: Value[] = []): Value { return { id, type: UNKNOWN, origins: from.length ? origins(from) : [{ kind: 'unknown', name: id }], domain: false, ownKey: from.some(v => v.ownKey), transforms: unique(from.flatMap(v => v.transforms)), pathLeaves: unique(from.flatMap(v => v.pathLeaves)) }; }
 export function controlled(value: Value, condition: Value): Value {
   return { ...value, origins: origins([value, condition]), ownKey: value.ownKey || condition.ownKey,
+    symbol: JSON.stringify(['controlled', condition.symbol ?? condition.id, value.symbol ?? value.id]),
     members: value.members && Object.fromEntries(Object.entries(value.members).map(([key, member]) => [key, controlled(member, condition)])) };
 }
 export function merge(values: Value[], id: string, type: TypeInfo = UNKNOWN): Value {
@@ -49,6 +53,10 @@ export function merge(values: Value[], id: string, type: TypeInfo = UNKNOWN): Va
     literal: values.every(v => v.literal !== undefined && v.literal === values[0].literal) ? values[0].literal : undefined,
     domain: values.every(v => v.domain), ownKey: values.some(v => v.ownKey), transforms: unique(values.flatMap(v => v.transforms)),
     predicate: same ? values[0].predicate : undefined,
+    highEntropy: values.every(v => v.highEntropy),
+    disclosed: values.every(v => v.disclosed),
+    symbol: values.every(v => v.symbol === values[0].symbol) ? values[0].symbol : JSON.stringify(['merge', ...values.map(v => v.symbol ?? v.id)]),
+    protectedKey: values.every(v => v.protectedKey === values[0].protectedKey) ? values[0].protectedKey : undefined,
     members: keys.length ? members : undefined, pathLeaves: unique(values.flatMap(v => v.pathLeaves)) };
 }
 export function lookup<T>(map: Map<string, T>, name: string, module?: string): T | undefined {

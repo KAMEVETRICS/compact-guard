@@ -32,7 +32,7 @@ test('reused commitment randomizer is detected by value identity, not variable n
 });
 
 test('disclose and hashes do not erase witness provenance for map membership', async () => {
-  assert.ok(has(await analyze('ledger m: Map<Bytes<32>,Boolean>; witness secret(): Bytes<32>; export circuit f(): Boolean { return m.member(disclose(persistentHash<Bytes<32>>(secret()))); }'), 'CG004'));
+  assert.ok(has(await analyze('ledger m: Map<Bytes<32>,Boolean>; witness secret(): Boolean; export circuit f(): Boolean { return m.member(disclose(persistentHash<Boolean>(secret()))); }'), 'CG004'));
   assert.equal(has(await analyze('ledger m: Map<Field,Boolean>; export circuit f(): Boolean { return m.member(1); }'), 'CG004'), false);
 });
 

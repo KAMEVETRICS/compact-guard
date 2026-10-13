@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path';
 import { parseSource } from './parser.js';
 import { Evaluator } from './engine.js';
 import { runRules } from './rules.js';
-import type { AnalysisResult, AnalyzerOptions } from './model.js';
+import type { AnalysisResult, AnalyzerOptions, Finding } from './model.js';
 export { parseSource } from './parser.js';
 export type { AnalysisResult, AnalyzerOptions, Finding, RuleId, CircuitSummary, ValueSummary } from './model.js';
 export type { ProgramIR, CircuitIR, IRNode, Span, Diagnostic } from './ir.js';
@@ -18,14 +18,37 @@ export async function analyzeSource(source: string, file = '<memory>', options: 
   // Evaluate helpers at actual call sites to preserve caller facts.
   const topLevel = declared.filter(c => !c.module);
   const roots = topLevel.some(c => c.exported) ? topLevel.filter(c => c.exported || c.name === '<constructor>') : topLevel.length ? topLevel : declared;
-  for (const circuit of roots) {
-    const evaluation = evaluator.evaluate(circuit);
-    result.circuits.push(evaluation.summary);
-    result.findings.push(...runRules(program, circuit, evaluation, options));
+  const evaluations = roots.map(circuit => ({ circuit, evaluation: evaluator.evaluate(circuit) }));
+  const users = new Map<string, Set<string>>();
+  for (const { circuit, evaluation } of evaluations) if (circuit.exported) {
+    for (const event of evaluation.events) if (event.kind === 'member' && event.args[0]?.protectedKey) {
+      const key = event.args[0].protectedKey;
+      const entries = users.get(key) ?? new Set<string>(); entries.add(circuit.qualifiedName); users.set(key, entries);
+    }
   }
+  const keyUsers = new Map([...users].map(([key, names]) => [key, [...names].sort()]));
+  for (const { circuit, evaluation } of evaluations) {
+    result.circuits.push(evaluation.summary);
+    result.findings.push(...runRules(program, circuit, evaluation, options, keyUsers));
+  }
+  result.findings = deduplicate(result.findings);
   result.diagnostics.push(...evaluator.diagnostics);
   result.findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column || a.rule.localeCompare(b.rule));
   return result;
+}
+function deduplicate(findings: Finding[]): Finding[] {
+  const groups = new Map<string, Finding[]>();
+  const rank = { review: 0, warning: 1, error: 2 };
+  for (const finding of findings) {
+    const key = JSON.stringify([finding.rule, finding.file, finding.line, finding.column]);
+    const group = groups.get(key) ?? []; group.push(finding); groups.set(key, group);
+  }
+  return [...groups.values()].map(group => {
+    const strongest = group.reduce((a, b) => rank[b.severity] > rank[a.severity] ? b : a);
+    const entries = [...new Set(group.map(f => f.circuit).filter((s): s is string => !!s))].sort();
+    const details = [...new Set(group.map(f => f.evidence?.detail).filter(Boolean))];
+    return { ...strongest, evidence: { kind: 'static', detail: `Entry circuits: ${entries.join(', ')}. ${details.join(' | ')}` } } as Finding;
+  });
 }
 export async function analyzeFile(file: string, options: AnalyzerOptions = {}): Promise<AnalysisResult> {
   const absolute = resolve(file); return analyzeSource(await readFile(absolute, 'utf8'), absolute, options);

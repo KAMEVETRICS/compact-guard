@@ -20,6 +20,11 @@ summaries) and `callGraph`. `Finding` matches PLAN.md exactly, including
 IR offsets are zero-based UTF-16 indices. Syntax errors skip rule evaluation
 for that file. Filesystem and WASM-loading failures reject the promise.
 
+Findings are deduplicated by `(rule, file, line, column)`. The strongest severity
+wins and `evidence.detail` lists every entry circuit that produced the finding,
+along with its distinct call-path evidence. `circuit` retains a representative
+entry point for compatibility; consumers should use the evidence for all paths.
+
 `parseSource` returns an owned IR with named fields, declarations, circuit
 parameters/bodies, and spans. Native tree objects are deleted before return;
 IR objects remain valid across later/concurrent parses. No analysis logic is
@@ -68,11 +73,27 @@ are joined conservatively; short-circuited effects are conditional.
 | CG001 | `ownPublicKey` provenance in an assertion or a branch controlling a ledger effect | warning |
 | CG002 | Private-derived persistent/transient hash input with a small bounded domain | warning |
 | CG003 | Same randomizer identity in compatible commitment paths; constant/public randomizers | warning / review |
-| CG004 | Private-derived key in Set/Map `member` or `lookup`, even through hashes/disclosure | warning |
+| CG004 | Raw/guessable private membership keys; protected-key reuse across exported circuits | warning / review |
 | CG005 | Witness/private-derived Merkle `checkRoot` or asserted root equality without leaf binding | review |
 | CG006 | Hash lacks a nonempty literal domain tag or literal prefix (including `pad`) | review |
 | CG007 | Disclosure of an aggregate containing private provenance | review |
 | CG008 | Explicit one-time action lacks a recognized matching nullifier check and insertion | review |
+
+CG004 assigns a high-entropy **class** to private witness/argument types with
+at least 128 bits of domain (for example `Bytes<32>` and `Field`). It recognizes
+hashes/commitments that include such an input, including a high-domain randomizer.
+These keys produce no warning: a review is emitted only if the same symbolic
+derivation is used for membership in more than one exported circuit. Derivations
+include witness declaration/arguments, domain prefixes and transformations;
+different domains or witness declarations do not match. This is a potential
+linkability check, not proof that repeated witness calls return identical values.
+Only actual cryptographic outputs carry this protection: including a hash next
+to a raw secret does not exempt an aggregate. Narrowing casts and arbitrary
+arithmetic drop the high-entropy class. Raw witnesses, low-domain hashes, unknown
+derivations and commitments with only public/constant randomness still warn.
+Explicitly disclosed circuit inputs with no witness/unknown provenance produce
+disclosure reviews, so intentional public inputs such as Battleship shots do
+not become privacy warnings. Witness disclosure does not receive that exception.
 
 CG005 requires the same path's `.leaf` to equal a computed hash/commitment or
 trusted ledger/constant value. Wrong paths, disjunctions and checks after use

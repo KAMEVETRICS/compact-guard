@@ -11,6 +11,7 @@ class Environment {
 interface Context {
   circuit: CircuitIR; root: string; env: Environment; guards: Predicate[]; branchPath: Record<string, boolean>;
   stack: string[]; events: Event[]; returns: Value[]; terminated: boolean;
+  publicIds: Set<string>;
 }
 export interface Evaluation { events: Event[]; summary: CircuitSummary }
 const STANDARD = new Set(['ownPublicKey', 'persistentHash', 'transientHash', 'persistentCommit', 'transientCommit', 'merkleTreePathRoot', 'merkleTreePathRootNoLeafHash', 'some', 'none', 'isSome', 'isNone', 'left', 'right', 'isLeft', 'isRight', 'either', 'ownContractAddress', 'nativeToken', 'tokenType', 'mintToken', 'send', 'receive', 'createZswapInput', 'createZswapOutput', 'currentBlockTime', 'blockTimeGte', 'blockTimeLt']);
@@ -53,10 +54,15 @@ export class Evaluator {
   }
   private id(prefix: string): string { return `${prefix}#${++this.sequence}`; }
   private ledgerId(node: IRNode): string { return `ledger:${node.span.file}:${node.span.start}`; }
-  private typed(type: TypeInfo, id: string, source: Origin[], depth = 0): Value {
+  private typed(type: TypeInfo, id: string, source: Origin[], depth = 0, symbol = id): Value {
     // Domain bound is conditional on already public ledger values.
     const value: Value = { id, type, bits: source.every(o => o.kind === 'ledger' || o.kind === 'constant') ? 0 : type.bits, origins: source, domain: false, ownKey: false, transforms: [], pathLeaves: [] };
-    if (type.members && depth < 12) value.members = Object.fromEntries(Object.entries(type.members).map(([key, t]) => [key, this.typed(t, `${id}.${key}`, source, depth + 1)]));
+    value.symbol = symbol;
+    value.highEntropy = source.some(o => o.kind === 'witness' || o.kind === 'argument') && (value.bits ?? 0) >= 128;
+    if (type.members && depth < 12) {
+      value.members = Object.fromEntries(Object.entries(type.members).map(([key, t]) => [key, this.typed(t, `${id}.${key}`, source, depth + 1, `${symbol}.${key}`)]));
+      value.highEntropy = Object.values(value.members).some(v => v.highEntropy);
+    }
     return value;
   }
   private event(ctx: Context, kind: Event['kind'], node: IRNode, args: Value[], result: Value, name?: string, target?: string): void {
@@ -64,18 +70,20 @@ export class Evaluator {
   }
   evaluate(circuit: CircuitIR): Evaluation {
     this.budget = 0;
-    const ctx: Context = { circuit, root: circuit.qualifiedName, env: new Environment(), guards: [], branchPath: {}, stack: [circuit.qualifiedName], events: [], returns: [], terminated: false };
+    const ctx: Context = { circuit, root: circuit.qualifiedName, env: new Environment(), guards: [], branchPath: {}, stack: [circuit.qualifiedName], events: [], returns: [], terminated: false, publicIds: new Set() };
     for (const p of circuit.params) this.bind(field(p, 'name'), this.typed(typeOf(field(p, 'type'), this.program, circuit.module), `arg:${circuit.qualifiedName}:${field(p, 'name')?.text}`, [{ kind: 'argument', name: `${circuit.qualifiedName}.${field(p, 'name')?.text}`, span: p.span }]), ctx, true);
     this.statement(circuit.body, ctx);
     const result = ctx.returns.length ? merge(ctx.returns, `return:${circuit.qualifiedName}`) : this.aggregate([], 'tuple', 'unit');
     return { events: ctx.events, summary: { name: circuit.qualifiedName, file: circuit.node.span.file, calls: this.callGraph[circuit.qualifiedName] ?? [], returnValue: summary(result), events: ctx.events.map(e => ({ kind: e.kind, span: e.node.span, inputs: e.args.map(summary) })) } };
   }
   private fork(ctx: Context, condition?: Value, truth = true): Context {
-    const child = { ...ctx, env: ctx.env.clone(), guards: [...ctx.guards], branchPath: { ...ctx.branchPath }, returns: [], terminated: false };
+    const child = { ...ctx, env: ctx.env.clone(), guards: [...ctx.guards], branchPath: { ...ctx.branchPath }, returns: [], terminated: false, publicIds: new Set(ctx.publicIds) };
     if (condition) { child.branchPath[condition.id] = truth; child.guards.push(truth ? condition.predicate ?? { kind: 'and', values: [condition] } : { kind: 'not', values: [condition] }); }
     return child;
   }
   private join(ctx: Context, yes: Context, no: Context, condition: Value): void {
+    // A value exposed on either feasible path cannot be assumed secret.
+    ctx.publicIds = new Set([...yes.publicIds, ...no.publicIds]);
     for (let i = 0; i < ctx.env.frames.length; i++) for (const [name, original] of ctx.env.frames[i]) {
       const a = yes.env.frames[i]?.get(name) ?? original, b = no.env.frames[i]?.get(name) ?? original;
       const value = yes.terminated ? b : no.terminated ? a : merge([a, b], this.id('join'));
@@ -143,12 +151,26 @@ export class Evaluator {
   }
   private select(object: Value, key: string): Value {
     if (object.members?.[key]) return object.members[key];
-    const value = this.typed(object.type.members?.[key] ?? object.type.element ?? UNKNOWN, `${object.id}.${key}`, object.origins);
-    return { ...value, ownKey: object.ownKey, transforms: object.transforms, pathLeaves: object.pathLeaves };
+    const value = this.typed(object.type.members?.[key] ?? object.type.element ?? UNKNOWN, `${object.id}.${key}`, object.origins, 0, `${object.symbol ?? object.id}.${key}`);
+    return { ...value, highEntropy: object.highEntropy && value.highEntropy,
+      bits: object.bits === undefined ? value.bits : value.bits === undefined ? object.bits : Math.min(object.bits, value.bits),
+      ownKey: object.ownKey, transforms: object.transforms, pathLeaves: object.pathLeaves };
+  }
+  private published(value: Value): Value {
+    return { ...value, disclosed: true, highEntropy: false, bits: 0,
+      members: value.members && Object.fromEntries(Object.entries(value.members).map(([key, member]) => [key, this.published(member)])) };
+  }
+  private visible(value: Value, ctx: Context): Value {
+    if ([...ctx.publicIds].some(id => value.id === id || value.id.startsWith(`${id}.`))) return this.published(value);
+    if (!value.members) return value;
+    const members = Object.fromEntries(Object.entries(value.members).map(([key, member]) => [key, this.visible(member, ctx)]));
+    if (Object.entries(members).every(([key, member]) => member === value.members![key])) return value;
+    const values = Object.values(members);
+    return { ...value, members, highEntropy: values.some(v => v.highEntropy), bits: values.every(v => v.bits !== undefined) ? values.reduce((sum, v) => sum + v.bits!, 0) : undefined };
   }
   private aggregate(values: Value[], name: string, id: string): Value {
     const different = [...new Map(values.map(v => [v.id, v])).values()];
-    return { id, type: { name, members: Object.fromEntries(values.map((v, i) => [String(i), v.type])) }, members: Object.fromEntries(values.map((v, i) => [String(i), v])),
+    return { id, symbol: JSON.stringify([name, ...values.map(v => v.symbol ?? v.id)]), highEntropy: values.some(v => v.highEntropy), type: { name, members: Object.fromEntries(values.map((v, i) => [String(i), v.type])) }, members: Object.fromEntries(values.map((v, i) => [String(i), v])),
       origins: origins(values), bits: different.every(v => v.bits !== undefined) ? Math.min(1024, different.reduce((sum, v) => sum + v.bits!, 0)) : undefined,
       domain: false, ownKey: values.some(v => v.ownKey), transforms: unique(values.flatMap(v => v.transforms)), pathLeaves: unique(values.flatMap(v => v.pathLeaves)) };
   }
@@ -158,7 +180,7 @@ export class Evaluator {
     const get = (name: string) => this.expression(field(node, name), ctx);
     switch (node.kind) {
       case 'identifier': {
-        const name = identifierName(node), local = ctx.env.get(name); if (local) return local;
+        const name = identifierName(node), local = ctx.env.get(name); if (local) return this.visible(local, ctx);
         const ledger = lookup(this.program.ledger, name, ctx.circuit.module);
         if (ledger) return this.typed(typeOf(field(ledger, 'type'), this.program, ctx.circuit.module), this.ledgerId(ledger), [{ kind: 'ledger', name, span: ledger.span }]);
         const enumeration = lookup(this.program.enums, name, ctx.circuit.module);
@@ -193,12 +215,24 @@ export class Evaluator {
         if (object.id.startsWith('enum:')) return { ...object, id: `${object.id}.${key}`, literal: `${object.type.name}.${key}`, bits: 0 };
         return this.select(object, key);
       }
-      case 'index_expression': { const object = get('object'), index = get('index'); return index.literal !== undefined ? this.select(object, String(index.literal)) : { ...merge(Object.values(object.members ?? {}).length ? Object.values(object.members!) : [object], this.id('index')), origins: origins([object, index]) }; }
-      case 'cast_expression': { const value = get('value'), type = typeOf(field(node, 'type'), this.program, ctx.circuit.module); return { ...value, type, bits: value.bits === undefined ? type.bits : type.bits === undefined ? value.bits : Math.min(type.bits, value.bits) }; }
+      case 'index_expression': {
+        const object = get('object'), index = get('index');
+        if (index.literal !== undefined) return this.select(object, String(index.literal));
+        const members = Object.values(object.members ?? {});
+        return controlled(members.length ? merge(members, this.id('index')) : this.select(object, `[${index.symbol ?? index.id}]`), index);
+      }
+      case 'cast_expression': {
+        const value = get('value'), type = typeOf(field(node, 'type'), this.program, ctx.circuit.module);
+        const retained = (type.bits ?? 0) >= (value.type.bits ?? Infinity);
+        return { ...value, type, id: retained ? value.id : `cast:${type.name}(${value.id})`, symbol: retained ? value.symbol : JSON.stringify(['cast', type.name, value.symbol ?? value.id]),
+          highEntropy: retained && value.highEntropy, protectedKey: retained ? value.protectedKey : undefined,
+          bits: value.bits === undefined ? type.bits : type.bits === undefined ? value.bits : Math.min(type.bits, value.bits) };
+      }
       case 'default_expression': { const type = typeOf(field(node, 'type'), this.program, ctx.circuit.module); return { ...this.typed(type, `default:${type.name}`, [{ kind: 'constant', name: 'default' }]), bits: 0 }; }
-      case 'pad_expression': { const value = get('value'), size = get('size'); return { ...value, type: { name: `Bytes<${size.literal}>` }, domain: value.domain && typeof size.literal === 'number' && size.literal >= Buffer.byteLength(String(value.literal ?? '')) }; }
+      case 'pad_expression': { const value = get('value'), size = get('size'); return { ...value, symbol: JSON.stringify(['pad', size.symbol ?? size.id, value.symbol ?? value.id]), type: { name: `Bytes<${size.literal}>` }, domain: value.domain && typeof size.literal === 'number' && size.literal >= Buffer.byteLength(String(value.literal ?? '')) }; }
       case 'disclose_expression': {
-        const value = get('value'), result = { ...value, transforms: unique([...value.transforms, 'disclose']) };
+        const value = get('value'), result = { ...this.published(value), transforms: unique([...value.transforms, 'disclose']) };
+        ctx.publicIds.add(value.id);
         this.event(ctx, 'disclose', node, [value], result); return result;
       }
       case 'assert_expression': {
@@ -212,7 +246,7 @@ export class Evaluator {
         if (field(node, 'operator')?.text !== '=') value = this.operation(field(node, 'operator')!.text[0], get('left'), value);
         this.bind(field(node, 'left'), value, ctx, false); return value;
       }
-      case 'unary_expression': { const value = get('argument'); return { ...value, id: `!(${value.id})`, type: { name: 'Boolean', bits: 1 }, bits: 1, literal: typeof value.literal === 'boolean' ? !value.literal : undefined, predicate: { kind: 'not', values: [value] } }; }
+      case 'unary_expression': { const value = get('argument'); return { ...value, highEntropy: false, protectedKey: undefined, symbol: `!(${value.symbol ?? value.id})`, id: `!(${value.id})`, type: { name: 'Boolean', bits: 1 }, bits: 1, literal: typeof value.literal === 'boolean' ? !value.literal : undefined, predicate: { kind: 'not', values: [value] } }; }
       case 'binary_expression': {
         const op = field(node, 'operator')!.text, left = get('left');
         if (op !== '&&' && op !== '||') return this.operation(op, left, get('right'));
@@ -234,7 +268,14 @@ export class Evaluator {
       case 'call_expression': return this.call(node, ctx);
       case 'generic_function': case 'arrow_function': return { ...unknown(`function:${node.span.start}`), callable: node };
       case 'map_expression': case 'fold_expression': return this.higherOrder(node, ctx);
-      case 'slice_expression': { const value = get('value'), start = get('start'), size = Number(field(node, 'size')?.text); if (value.members && typeof start.literal === 'number' && Number.isFinite(size)) return this.aggregate(Object.values(value.members).slice(start.literal, start.literal + size), 'tuple', this.id('slice')); return value; }
+      case 'slice_expression': {
+        const value = get('value'), start = get('start'), size = Number(field(node, 'size')?.text);
+        if (value.members && typeof start.literal === 'number' && Number.isFinite(size)) return this.aggregate(Object.values(value.members).slice(start.literal, start.literal + size), 'tuple', this.id('slice'));
+        const bits = value.type.element?.bits !== undefined && Number.isSafeInteger(size) && size >= 0 ? value.type.element.bits * size : undefined;
+        return { ...unknown(this.id('slice'), [value, start]), type: { name: `Vector<${size},${value.type.element?.name ?? 'unknown'}>`, element: value.type.element, length: size },
+          symbol: JSON.stringify(['slice', size, start.symbol ?? start.id, value.symbol ?? value.id]),
+          bits: bits === undefined ? undefined : Math.min(bits, value.bits ?? bits), highEntropy: value.highEntropy && bits !== undefined && bits >= 128 };
+      }
       case 'range_expression': return { ...this.aggregate([get('start'), get('end')], 'range', this.id('range')), type: { name: 'range', element: { name: 'Field', bits: 254 } } };
       case 'emit_expression': { const value = get('value'); this.event(ctx, 'write', node, [value], value, 'emit'); return value; }
       default: this.diagnostic(node, 'unsupported-expression', `No precise data-flow model for ${node.kind}.`); return unknown(node.kind, node.children.filter(n => n.named && n.kind !== 'comment').map(n => this.expression(n, ctx)));
@@ -243,6 +284,8 @@ export class Evaluator {
   private operation(op: string, a: Value, b: Value): Value {
     const bool = ['==', '!=', '<', '<=', '>', '>=', '&&', '||'].includes(op), result = this.aggregate([a, b], bool ? 'Boolean' : a.type.name, `${op}(${a.id},${b.id})`);
     result.members = undefined; result.type = bool ? { name: 'Boolean', bits: 1 } : a.type; result.bits = bool ? 1 : result.bits;
+    // Arbitrary arithmetic/comparisons can collapse even a large input domain.
+    result.highEntropy = false; result.symbol = JSON.stringify([op, a.symbol ?? a.id, b.symbol ?? b.id]);
     if (op === '==' || op === '!=' || op === '&&' || op === '||') result.predicate = { kind: ({ '==': 'eq', '!=': 'neq', '&&': 'and', '||': 'or' } as const)[op as '=='], values: [a, b] };
     if (a.literal !== undefined && b.literal !== undefined) {
       if (op === '==') result.literal = a.literal === b.literal;
@@ -259,7 +302,7 @@ export class Evaluator {
     if (ctx.stack.length >= (this.options.maxCallDepth ?? 24)) { this.diagnostic(node, 'call-depth', 'Call depth limit reached; result is unknown.'); return unknown(this.id('depth'), args); }
     const child: Context = { ...ctx, circuit, env: new Environment(), stack: [...ctx.stack, circuit.qualifiedName], returns: [], terminated: false, guards: [...ctx.guards] };
     circuit.params.forEach((p, i) => this.bind(field(p, 'name'), args[i] ?? unknown(`missing:${i}`), child, true));
-    this.statement(circuit.body, child); ctx.guards = child.guards;
+    this.statement(circuit.body, child); ctx.guards = child.guards; ctx.publicIds = child.publicIds;
     return child.returns.length ? merge(child.returns, this.id('return')) : this.aggregate([], '[]', 'unit');
   }
   private call(node: IRNode, ctx: Context): Value {
@@ -283,14 +326,16 @@ export class Evaluator {
     const circuit = name && lookup(this.program.circuits, name, ctx.circuit.module);
     if (circuit) return this.invoke(circuit, args, node, ctx);
     const witness = name && lookup(this.program.witnesses, name, ctx.circuit.module);
-    if (witness) return this.typed(typeOf(field(witness, 'return_type'), this.program, ctx.circuit.module), this.id(`witness:${name}`), [{ kind: 'witness', name: name!, span: node.span }]);
+    if (witness) return this.typed(typeOf(field(witness, 'return_type'), this.program, ctx.circuit.module), this.id(`witness:${name}`), [{ kind: 'witness', name: name!, span: node.span }], 0, JSON.stringify(['witness', witness.span.file, witness.span.start, ...args.map(v => v.symbol ?? v.id)]));
     if (fun?.kind === 'member_expression') return this.method(fun, args, node, ctx);
     const builtin = raw ? this.standardAliases.get(raw) ?? (this.standardAll && STANDARD.has(raw) ? raw : undefined) : undefined;
     if (!builtin) { this.diagnostic(node, 'unresolved-call', `No implementation or standard-library model for ${raw ?? 'computed callee'}.`); return unknown(this.id('call'), args); }
     if (builtin === 'ownPublicKey') return { ...this.typed({ name: 'ZswapCoinPublicKey', bits: 256 }, this.id('ownPublicKey'), [{ kind: 'witness', name: 'ownPublicKey', span: node.span }]), ownKey: true };
     if (builtin === 'persistentHash' || builtin === 'transientHash' || builtin === 'persistentCommit' || builtin === 'transientCommit') {
       const isCommit = builtin.endsWith('Commit'), input = this.aggregate(args, 'inputs', this.id('input'));
-      const result = { ...input, members: undefined, id: `${builtin}(${args.map(v => v.id).join(',')})`, type: { name: builtin.startsWith('persistent') ? 'Bytes<32>' : 'Field', bits: builtin.startsWith('persistent') ? 256 : 254 }, transforms: unique([...input.transforms, isCommit ? 'commit' : 'hash']) };
+      const result: Value = { ...input, members: undefined, id: `${builtin}(${args.map(v => v.id).join(',')})`, type: { name: builtin.startsWith('persistent') ? 'Bytes<32>' : 'Field', bits: builtin.startsWith('persistent') ? 256 : 254 }, transforms: unique([...input.transforms, isCommit ? 'commit' : 'hash']) };
+      result.symbol = JSON.stringify([builtin, ...args.map(v => v.symbol ?? v.id)]);
+      result.protectedKey = input.highEntropy ? result.symbol : undefined;
       this.event(ctx, isCommit ? 'commit' : 'hash', node, args, result, builtin); return result;
     }
     if (builtin.startsWith('merkleTreePathRoot')) return { ...unknown(`${builtin}(${args[0]?.id})`, args), type: { name: 'MerkleTreeDigest' }, pathLeaves: args[0] ? [args[0].id] : [] };

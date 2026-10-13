@@ -16,7 +16,7 @@ Run `npm test` at the root to verify all pairs against the analyzer. Run
 | CG001 | Witness-controlled public key authorizes a write | Assert knowledge of a secret matching the stored domain-separated hash |
 | CG002 | Publish the hash of a Boolean vote | Publish a randomized commitment |
 | CG003 | Two commitments share the same opening | Request a separate opening for each commitment |
-| CG004 | Public Set query reveals a private-derived member key | Use a Merkle path and bind the leaf to the derived member |
+| CG004 | Public Set query reveals a raw private witness key | Use a Merkle path and bind the leaf to the derived member |
 | CG005 | Merkle path proves any leaf | Assert the path leaf matches the derived member |
 | CG006 | Hash secret without a protocol tag | Prefix the input with a literal domain tag |
 | CG007 | Disclose profile including recovery secret | Disclose only age |
@@ -32,14 +32,17 @@ Run `npm test` at the root to verify all pairs against the analyzer. Run
   witness invocations are not proof of freshness; malicious/buggy witness
   implementations can still reuse them. Cross-transaction context/counters
   belong in the application protocol and are outside these tiny fixtures.
-- CG004/CG005: initialize the Merkle tree with the `cg:member` hash of an
+- CG004 vulnerable: the Set contains the raw enrolled member secret; querying
+  it exposes that witness value. This replaces the former high-entropy hash
+  query, which is intentionally exempt from CG004 warnings.
+- CG004 fixed / CG005: initialize the Merkle tree with the `cg:member` hash of an
   enrolled secret and generate the corresponding `MerkleTreePath<8,Bytes<32>>`.
   An arbitrary valid path must not grant knowledge of that enrolled secret.
 - CG007 deliberately changes the output type to expose only the requested age.
 - CG008 models one claim **per fixed secret**. Replaying the same secret must
   fail in the fixed version. Eligibility and secret-to-user binding are not
-  implemented; choosing new secrets is not prevented. The public nullifier
-  lookup intentionally also triggers CG004 for disclosure review.
+  implemented; choosing new secrets is not prevented. Its high-entropy hashed
+  nullifier is used in just one exported circuit, so it does not trigger CG004.
 
 ## Validation status
 

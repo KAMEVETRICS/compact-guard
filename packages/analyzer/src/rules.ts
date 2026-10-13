@@ -34,13 +34,13 @@ function oneTime(program: ProgramIR, circuit: CircuitIR, options: AnalyzerOption
   if (options.oneTimeCircuits?.includes(circuit.qualifiedName)) return true;
   return [...walk(program.root)].some(n => n.kind === 'comment' && /^\/\/\s*compact-guard:\s*one-time\s+(\S+)\s*$/.exec(n.text)?.[1] === circuit.qualifiedName);
 }
-export function runRules(program: ProgramIR, circuit: CircuitIR, evaluation: Evaluation, options: AnalyzerOptions): Finding[] {
+export function runRules(program: ProgramIR, circuit: CircuitIR, evaluation: Evaluation, options: AnalyzerOptions, keyUsers: ReadonlyMap<string, string[]> = new Map()): Finding[] {
   const result: Finding[] = [], commits: Event[] = [];
   function add(rule: RuleId, severity: Finding['severity'], node: IRNode, message: string, event?: Event): void {
     if (options.rules && !options.rules.includes(rule)) return;
     const { file, line, column } = node.span;
     const detail = event ? `${event.callPath.join(' -> ')}; ${event.args.map(v => `${v.type.name}: ${v.origins.map(o => `${o.kind} ${o.name}`).join(', ')}${v.bits === undefined ? '' : `; domain <= 2^${v.bits}`}${v.transforms.length ? `; via ${v.transforms.join(', ')}` : ''}`).join(' | ')}` : `Explicit one-time intent for ${circuit.qualifiedName}; no unconditional matching absence check and insertion was recognized.`;
-    if (!result.some(f => f.rule === rule && f.file === file && f.line === line && f.column === column)) result.push({ rule, severity, file, line, column, circuit: circuit.qualifiedName, message, docUrl: DOC, evidence: { kind: 'static', detail } });
+    result.push({ rule, severity, file, line, column, circuit: circuit.qualifiedName, message, docUrl: DOC, evidence: { kind: 'static', detail } });
   }
   for (const event of evaluation.events) {
     const input = event.args[0];
@@ -56,7 +56,14 @@ export function runRules(program: ProgramIR, circuit: CircuitIR, evaluation: Eva
       else if (randomizer && randomizer.origins.every(o => o.kind === 'constant' || o.kind === 'ledger')) add('CG003', 'review', event.node, 'Commitment randomizer is constant or public ledger data; review freshness and secrecy.', event);
       commits.push(event);
     }
-    if (event.kind === 'member' && input && privateValue(input)) add('CG004', 'warning', event.node, 'Set/Map access uses private-derived data as a public key; review the disclosure or use a Merkle proof.', event);
+    if (event.kind === 'member' && input && privateValue(input)) {
+      if (input.protectedKey) {
+        const entries = keyUsers.get(input.protectedKey) ?? [];
+        if (circuit.exported && entries.length > 1) add('CG004', 'review', event.node, `Potential cross-circuit linkability: the same high-entropy hash/commitment derivation is used by ${entries.join(', ')}; review reuse of its public identifier.`, event);
+      } else if (input.disclosed && input.origins.every(o => o.kind !== 'witness' && o.kind !== 'unknown')) {
+        add('CG004', 'review', event.node, 'An explicitly disclosed circuit input is used as a public membership key; confirm this disclosure is intended.', event);
+      } else add('CG004', 'warning', event.node, 'Set/Map access exposes a raw private key or a derivation without a recognized high-entropy secret; review disclosure or use a Merkle proof.', event);
+    }
     if (event.kind === 'merkle' && input && privateValue(input) && (!input.pathLeaves.length || input.pathLeaves.some(path => !binding(event, path)))) add('CG005', 'review', event.node, 'Witness-derived Merkle root lacks a preceding equality binding its path leaf to a recomputed or trusted leaf.', event);
     if (event.kind === 'assert' && input.predicate) {
       const comparedRoots = facts(input.predicate).filter(f => f.kind === 'eq' && f.truth || f.kind === 'neq' && !f.truth).flatMap(f => f.values).filter(v => v.pathLeaves.length && privateValue(v));

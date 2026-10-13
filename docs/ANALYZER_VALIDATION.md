@@ -1,63 +1,108 @@
-# Analyzer validation — 2026-10-12
+# Analyzer validation — 2026-10-13
 
-`npm test` passed: **28 analyzer tests** and **11 grammar runtime tests**.
-The analyzer test run includes TypeScript compilation with strict checking.
-Independent review found five data-flow/identity issues; all were reproduced,
-fixed and covered by regression tests before this final run.
+Target: **Compact language 0.23**, **compiler 0.31.1**. Parser schema and WASM
+are unchanged. The analyzer remains a JavaScript/WASM-only runtime on Windows.
 
-`node grammar/scripts/parse-all.mjs corpus`:
+## Checks
 
-```text
-corpus: 16 files, 0 ERROR, 0 MISSING, 0 files with errors
-```
+- `npm test`: **41 analyzer tests + 11 grammar runtime tests passed**.
+- All seven vendored official examples compile with `compact compile --skip-zk`
+  in WSL Ubuntu; generated output stays under /tmp.
+- All 16 corpus files compile again using `scripts/compile-corpus.sh`; see
+  [CORPUS_COMPILE_LOG.md](CORPUS_COMPILE_LOG.md).
+- Every vulnerable fixture retains its target rule and every fixed fixture
+  clears its target rule.
+- Official regression tests use local fixtures only, assert zero error/warning
+  findings, and pin every allowed review's rule, line, column and message category.
+- All official and corpus files have zero syntax-error diagnostics.
 
-All eight vulnerable fixtures report their target rule. Every fixed fixture
-clears its target rule. Additional findings are expected:
+## Official examples: before / after
 
-| Pair | Vulnerable findings | Fixed findings |
+Each count is **error / warning / review**. Baseline: analyzer commit 39bd582,
+measured before these changes on the vendored sources. Source/revision pins and
+compiler results are in [the fixture README](../packages/analyzer/test/fixtures/official/README.md).
+
+| File | Before E / W / R | After E / W / R |
 | --- | --- | --- |
-| CG001 | CG001 | — |
-| CG002 | CG002, CG006 | — |
-| CG003 | CG003 | — |
-| CG004 | CG004 | — |
-| CG005 | CG005 | — |
-| CG006 | CG006 | — |
-| CG007 | CG007 | — |
-| CG008 | CG008 | CG004 |
+| battleship-simple.compact | 0 / 6 / 4 | 0 / 0 / 3 |
+| calculator.compact | 0 / 0 / 0 | 0 / 0 / 0 |
+| election.compact | 0 / 6 / 2 | 0 / 0 / 7 |
+| example-bboard.compact | 0 / 0 / 0 | 0 / 0 / 0 |
+| private-guest-list.compact | 0 / 3 / 0 | 0 / 0 / 1 |
+| private-reserve-auction.compact | 0 / 2 / 3 | 0 / 0 / 1 |
+| token-transfers.compact | 0 / 0 / 0 | 0 / 0 / 0 |
+| **Total** | **0 / 17 / 9** | **0 / 0 / 12** |
 
-CG008's fixed nullifier intentionally uses a disclosed private-derived key.
-CG004 asks for disclosure review; it does not mean the replay guard is missing.
+Total findings: **26 → 12**; warnings: **17 → 0**. The same helper location now
+produces one finding with all reaching entry circuits in its evidence, including
+battleship-simple:475 (formerly four copies), election:253 (two) and
+private-reserve-auction:175 (three).
 
-## Real-source smoke scans
+### Retained findings (all review)
 
-The scratch sources and revisions are listed in
-[the parser acceptance report](../grammar/KNOWN_ISSUES.md). No external source
-was modified for these scans. Each analyzer scan completed without exceptions.
-These finding counts are **untriaged static candidates**, not confirmed bugs.
+| Source location | Rule | Justification |
+| --- | --- | --- |
+| battleship-simple.compact:241:13 | CG004 | An explicitly disclosed circuit input is used as a membership key; review the intended public disclosure. |
+| battleship-simple.compact:285:13 | CG004 | An explicitly disclosed circuit input is used as a membership key; review the intended public disclosure. |
+| battleship-simple.compact:475:18 | CG006 | Hash input has no literal domain prefix; review separation of cryptographic uses. |
+| election.compact:89:13 | CG004 | The same voter-identifier derivation is queried from registerToVote, commitVote and revealVote; review intended linkability. |
+| election.compact:129:12 | CG004 | The same voter-identifier derivation is queried from registerToVote, commitVote and revealVote; review intended linkability. |
+| election.compact:131:13 | CG004 | The same voter-identifier derivation is queried from registerToVote, commitVote and revealVote; review intended linkability. |
+| election.compact:165:12 | CG004 | The same voter-identifier derivation is queried from registerToVote, commitVote and revealVote; review intended linkability. |
+| election.compact:167:12 | CG004 | The same voter-identifier derivation is queried from registerToVote, commitVote and revealVote; review intended linkability. |
+| election.compact:181:12 | CG004 | The same voter-identifier derivation is queried from registerToVote, commitVote and revealVote; review intended linkability. |
+| election.compact:253:21 | CG006 | Hash input has no literal domain prefix; review separation of cryptographic uses. |
+| private-guest-list.compact:175:13 | CG004 | An explicitly disclosed circuit input is used as a membership key; review the intended public disclosure. |
+| private-reserve-auction.compact:175:18 | CG006 | Hash input has no literal domain prefix; review separation of cryptographic uses. |
 
-| Source | Files | Syntax errors | Findings | Coverage diagnostic codes |
-| --- | ---: | ---: | ---: | --- |
-| example-bboard | 1 | 0 | 0 | ledger-operation |
-| example-private-party | 1 | 0 | 3 | ledger-operation, opaque-builtin, unresolved-call |
-| midnight-rps-sample-app | 1 | 0 | 6 | — |
-| docs-contracts | 6 | 0 | 26 | ledger-operation, opaque-builtin, unresolved-call |
-| example-battleship | 1 | 0 | 10 | ledger-operation |
+There are no retained findings on example-bboard, calculator or token-transfers.
+These reviews are explicit protocol/disclosure questions, not claims that a
+public key hash reveals the underlying high-entropy secret.
 
-`example-private-party` uses the README source extracted in the original parser
-validation because the repository does not track the `.compact` file.
+## Corpus: findings by file and severity
 
-Parser files were not modified. Verified SHA-256 hashes still match the
-published parser commit:
+| File | E / W / R | Rules |
+| --- | --- | --- |
+| CG001/fixed.compact | 0 / 0 / 0 | — |
+| CG001/vulnerable.compact | 0 / 1 / 0 | CG001 |
+| CG002/fixed.compact | 0 / 0 / 0 | — |
+| CG002/vulnerable.compact | 0 / 1 / 1 | CG002, CG006 |
+| CG003/fixed.compact | 0 / 0 / 0 | — |
+| CG003/vulnerable.compact | 0 / 1 / 0 | CG003 |
+| CG004/fixed.compact | 0 / 0 / 0 | — |
+| CG004/vulnerable.compact | 0 / 1 / 0 | CG004 |
+| CG005/fixed.compact | 0 / 0 / 0 | — |
+| CG005/vulnerable.compact | 0 / 0 / 1 | CG005 |
+| CG006/fixed.compact | 0 / 0 / 0 | — |
+| CG006/vulnerable.compact | 0 / 0 / 1 | CG006 |
+| CG007/fixed.compact | 0 / 0 / 0 | — |
+| CG007/vulnerable.compact | 0 / 0 / 1 | CG007 |
+| CG008/fixed.compact | 0 / 0 / 0 | — |
+| CG008/vulnerable.compact | 0 / 0 / 1 | CG008 |
+| **Total** | **0 / 4 / 5** | |
 
-- node-types.json: `2a56adbf9c35612c39cc2e291f21b268e10b84dd3f022acd581e843723e31125`
-- WASM: `82dbe823e93b1dfa5b3b479717dc5a1446c28fb6a2b62f4a8d1872b49f5b2c1e`
+CG004's former vulnerable hash-of-secret example was precisely the newly exempt
+pattern. Its vulnerable variant now queries the raw witness key instead, so
+it remains a meaningful warning regression. The fixed Merkle variant is unchanged.
+CG008's fixed high-entropy nullifier is queried by only one exported circuit and
+now correctly produces no CG004 finding.
 
-## Remaining validation
+## Compatibility and analysis boundaries
 
-2026-10-13: all 16 corpus files compile with compiler 0.31.1 (language 0.23)
-under WSL; see [CORPUS_COMPILE_LOG.md](CORPUS_COMPILE_LOG.md). The pragma was
-changed from 0.26 to 0.23 because 0.31.1 rejects 0.26; no other source changed.
-All manifest entries now have `compilerVerified: true`. The corpus has not been
-executed with the runtime yet, so there are still no exploit-evidence claims.
-Cross-file imports, generic substitution and the bounded/heuristic analysis
-limits are described in [the analyzer README](../packages/analyzer/README.md).
+All new contracts start with `pragma language_version 0.23;`. Bboard and
+Battleship's pragmas were relocated; token-transfers gained a pragma. The
+upstream calculator example failed 0.31.1 until its witness-derived quotient
+return was changed to `return disclose(quo);`. This sole logic adaptation is
+recorded in the fixture README. Other contract bodies are unchanged.
+
+High-entropy classification is type-based (at least 128 bits), not proof of
+randomness or secrecy. Raw witnesses and low/unknown-domain derivations continue
+to warn. Public salts and narrowed projections cannot manufacture secret entropy.
+Cryptographic keys trigger a linkability review only when their symbolic
+derivation appears in multiple exported entry circuits. No cross-file inference
+or proof of run-time witness equality is claimed.
+
+Coverage diagnostics remain separate from findings (for example opaque ledger
+operations or unsupported library calls). Zero warning findings is not a claim
+of complete semantic coverage. Compilation skips proof generation; dynamic
+attacks and deployed behavior were not tested in this task.
