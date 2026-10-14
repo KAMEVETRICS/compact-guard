@@ -2,3 +2,4 @@ node_modules/
 packages/*/dist/
 corpus/managed/
 *.tsbuildinfo
+contracts/*/src/managed/

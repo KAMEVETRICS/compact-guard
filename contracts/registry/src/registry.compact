@@ -1,0 +1,115 @@
+pragma language_version 0.23;
+
+// compact-guard scan registry.
+//
+// Records that a contract, identified by the hash of its source, was scanned by
+// an authorized compact-guard attester. Finding counts are public so anyone can
+// check a contract's status. The full report stays off-chain: only a commitment
+// to its hash is stored, and the attester can later prove which report it was.
+//
+// Attesters and the admin authenticate by proving knowledge of a secret key
+// (a domain-separated hash compared against public state), never with
+// ownPublicKey(), whose value the prover chooses.
+
+import CompactStandardLibrary;
+
+export struct Attestation {
+  // Commitment to the hash of the full SARIF report.
+  reportCommitment: Bytes<32>,
+  errors: Uint<32>,
+  warnings: Uint<32>,
+  reviews: Uint<32>,
+  // Identifies the compact-guard version and rule set that produced the report.
+  toolVersion: Bytes<32>,
+  // Public key of the attester that submitted it.
+  attester: Bytes<32>
+}
+
+export sealed ledger admin: Bytes<32>;
+export ledger attesters: Set<Bytes<32>>;
+// Latest attestation per contract source hash.
+export ledger attestations: Map<Bytes<32>, Attestation>;
+// Report hashes that attesters have chosen to reveal.
+export ledger revealedReports: Map<Bytes<32>, Bytes<32>>;
+export ledger totalAttestations: Counter;
+
+// The caller's secret key. It never leaves the caller's machine.
+witness localSecretKey(): Bytes<32>;
+// 32 fresh random bytes hiding a report hash inside its commitment. The
+// attester stores them per contract hash so the report can be revealed later.
+witness reportOpening(contractHash: Bytes<32>): Bytes<32>;
+
+constructor() {
+  admin = disclose(adminKey(localSecretKey()));
+}
+
+export circuit addAttester(attesterPk: Bytes<32>): [] {
+  assert(adminKey(localSecretKey()) == admin, "Only the admin can add attesters");
+  attesters.insert(disclose(attesterPk));
+}
+
+export circuit removeAttester(attesterPk: Bytes<32>): [] {
+  assert(adminKey(localSecretKey()) == admin, "Only the admin can remove attesters");
+  attesters.remove(disclose(attesterPk));
+}
+
+export circuit attest(
+  contractHash: Bytes<32>,
+  reportHash: Bytes<32>,
+  errors: Uint<32>,
+  warnings: Uint<32>,
+  reviews: Uint<32>,
+  toolVersion: Bytes<32>
+): [] {
+  const me = attesterKey(localSecretKey());
+  assert(attesters.member(disclose(me)), "Not an authorized attester");
+
+  const key = disclose(contractHash);
+  // A new attestation replaces the old one, so an earlier reveal no longer applies.
+  if (revealedReports.member(key)) {
+    revealedReports.remove(key);
+  }
+  attestations.insert(key, Attestation {
+    reportCommitment: persistentCommit<Bytes<32>>(reportHash, reportOpening(contractHash)),
+    errors: disclose(errors),
+    warnings: disclose(warnings),
+    reviews: disclose(reviews),
+    toolVersion: disclose(toolVersion),
+    attester: disclose(me)
+  });
+  totalAttestations.increment(1);
+}
+
+// Publishes the report hash behind an attestation, proving it opens the stored commitment.
+export circuit revealReport(contractHash: Bytes<32>, reportHash: Bytes<32>): [] {
+  const key = disclose(contractHash);
+  assert(attestations.member(key), "No attestation for this contract");
+  const record = attestations.lookup(key);
+  assert(record.attester == attesterKey(localSecretKey()), "Only the original attester can reveal its report");
+  assert(persistentCommit<Bytes<32>>(reportHash, reportOpening(contractHash)) == record.reportCommitment,
+         "Report hash does not match the attestation");
+  revealedReports.insert(key, disclose(reportHash));
+}
+
+// True when the latest attestation for a contract has no error or warning findings.
+export circuit isClean(contractHash: Bytes<32>): Boolean {
+  const key = disclose(contractHash);
+  if (!attestations.member(key)) {
+    return false;
+  }
+  const record = attestations.lookup(key);
+  return record.errors == 0 && record.warnings == 0;
+}
+
+circuit adminKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "cg-registry:admin:"), sk]);
+}
+
+circuit attesterKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "cg-registry:attester:"), sk]);
+}
+
+// Lets an attester compute, off-chain, the public key the admin should register.
+export pure circuit attesterPublicKey(sk: Bytes<32>): Bytes<32> {
+  return attesterKey(sk);
+}

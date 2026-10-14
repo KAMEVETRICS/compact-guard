@@ -1,0 +1,29 @@
+# Example: scan the corpus and upload results to GitHub code scanning.
+# The corpus contains deliberately vulnerable contracts, so fail-on is "none"
+# here and its findings will show up as code-scanning alerts by design.
+name: compact-guard
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: scan
+        uses: ./
+        with:
+          paths: corpus
+          fail-on: none
+
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+          category: compact-guard

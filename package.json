@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/analyzer"],
+  "workspaces": ["packages/analyzer", "packages/cli", "contracts/registry"],
   "scripts": {
-    "build": "npm run build --workspace @compact-guard/analyzer",
-    "test": "npm run test --workspace @compact-guard/analyzer && npm --prefix grammar run test:runtime"
+    "build": "npm run build -w packages/analyzer -w packages/cli",
+    "test": "npm run test -w packages/analyzer -w packages/cli && npm --prefix grammar run test:runtime",
+    "test:registry": "npm run test -w contracts/registry"
   }
 }

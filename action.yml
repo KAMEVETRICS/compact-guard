@@ -1,0 +1,38 @@
+name: compact-guard
+description: Scan Midnight Compact contracts for security mistakes the compiler does not catch, and write a SARIF report.
+inputs:
+  paths:
+    description: Space-separated .compact files or directories to scan, relative to the workspace.
+    default: '.'
+  fail-on:
+    description: Fail the step on findings at or above this level (error, warning, review, none).
+    default: error
+  output:
+    description: Where to write the SARIF report.
+    default: compact-guard.sarif
+outputs:
+  sarif:
+    description: Path of the SARIF report.
+    value: ${{ inputs.output }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Install and build compact-guard
+      shell: bash
+      run: |
+        npm ci --prefix "$GITHUB_ACTION_PATH"
+        npm --prefix "$GITHUB_ACTION_PATH" run build -w packages/analyzer -w packages/cli
+    - name: Scan
+      shell: bash
+      # Inputs go through env, not ${{ }} in the script, so they cannot inject shell commands.
+      env:
+        CG_PATHS: ${{ inputs.paths }}
+        CG_FAIL_ON: ${{ inputs.fail-on }}
+        CG_OUTPUT: ${{ inputs.output }}
+      run: |
+        read -r -a paths <<< "$CG_PATHS"
+        node "$GITHUB_ACTION_PATH/packages/cli/bin/compact-guard.js" \
+          --format sarif --output "$CG_OUTPUT" --fail-on "$CG_FAIL_ON" -- "${paths[@]}"

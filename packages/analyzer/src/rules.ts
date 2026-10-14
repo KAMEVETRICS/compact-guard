@@ -1,8 +1,8 @@
 import { walk, type CircuitIR, type IRNode, type ProgramIR } from './ir.js';
 import { privateValue, type AnalyzerOptions, type Event, type Finding, type Predicate, type RuleId, type Value } from './model.js';
 import type { Evaluation } from './engine.js';
+import { RULE_BY_ID } from './catalog.js';
 
-const DOC = 'https://docs.midnight.network/compact/smart-contract-security';
 interface Fact { kind: 'eq' | 'neq' | 'member'; values: Value[]; target?: string; truth: boolean }
 // Only facts that must hold are admitted. An OR does not establish either operand.
 function facts(predicate: Predicate, truth = true): Fact[] {
@@ -40,7 +40,7 @@ export function runRules(program: ProgramIR, circuit: CircuitIR, evaluation: Eva
     if (options.rules && !options.rules.includes(rule)) return;
     const { file, line, column } = node.span;
     const detail = event ? `${event.callPath.join(' -> ')}; ${event.args.map(v => `${v.type.name}: ${v.origins.map(o => `${o.kind} ${o.name}`).join(', ')}${v.bits === undefined ? '' : `; domain <= 2^${v.bits}`}${v.transforms.length ? `; via ${v.transforms.join(', ')}` : ''}`).join(' | ')}` : `Explicit one-time intent for ${circuit.qualifiedName}; no unconditional matching absence check and insertion was recognized.`;
-    result.push({ rule, severity, file, line, column, circuit: circuit.qualifiedName, message, docUrl: DOC, evidence: { kind: 'static', detail } });
+    result.push({ rule, severity, file, line, column, circuit: circuit.qualifiedName, message, docUrl: RULE_BY_ID.get(rule)!.docUrl, evidence: { kind: 'static', detail } });
   }
   for (const event of evaluation.events) {
     const input = event.args[0];

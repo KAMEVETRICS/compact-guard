@@ -1,0 +1,30 @@
+{
+  "name": "@compact-guard/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Command-line interface for compact-guard, a security analyzer for Midnight Compact contracts.",
+  "license": "Apache-2.0",
+  "bin": {
+    "compact-guard": "bin/compact-guard.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/run.d.ts",
+      "import": "./dist/run.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@compact-guard/analyzer": "*"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0",
+    "typescript": "5.9.3"
+  }
+}

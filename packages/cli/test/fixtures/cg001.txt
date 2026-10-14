@@ -1,0 +1,2 @@
+corpus/CG001/vulnerable.compact:8:3  warning  CG001  Authorization depends on ownPublicKey(), whose witness can be forged.  [change]
+1 finding (0 error, 1 warning, 0 review) in 2 files; 0 diagnostics

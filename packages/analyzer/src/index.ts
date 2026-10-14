@@ -5,6 +5,7 @@ import { Evaluator } from './engine.js';
 import { runRules } from './rules.js';
 import type { AnalysisResult, AnalyzerOptions, Finding } from './model.js';
 export { parseSource } from './parser.js';
+export { RULES, RULE_BY_ID, type RuleInfo } from './catalog.js';
 export type { AnalysisResult, AnalyzerOptions, Finding, RuleId, CircuitSummary, ValueSummary } from './model.js';
 export type { ProgramIR, CircuitIR, IRNode, Span, Diagnostic } from './ir.js';
 

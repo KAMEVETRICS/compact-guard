@@ -1,7 +1,9 @@
 # compact-guard
 
-Static security checks for Midnight Compact contracts. The parser targets
-language 0.26.0 and runs through `web-tree-sitter` and the committed WASM.
+Static security checks for Midnight Compact contracts. The parser follows the
+published Compact grammar (0.26.0 and later) and runs through `web-tree-sitter`
+and the committed WASM. Contracts in this repo target language 0.23, the version
+compiler 0.31.1 supports (the compiler pinned in Midnight's compatibility matrix).
 The analyzer implements PLAN.md's CG001–CG008 with provenance through local
 helpers, aggregate fields, casts, branches, hashes, commitments and disclosures.
 
@@ -18,6 +20,20 @@ This installs only JavaScript/WASM runtime dependencies and the TypeScript
 compiler. No native Node addon, Compact compiler, WSL, or tree-sitter compiler
 is needed to consume the parser or run analyzer tests on Windows.
 
+## Command line
+
+```sh
+npm run build -w packages/analyzer -w packages/cli
+npx compact-guard corpus                      # text report
+npx compact-guard --format sarif --output compact-guard.sarif contracts
+```
+
+Exit code 1 means a finding at or above `--fail-on` (default `error`). SARIF
+output works with GitHub code scanning; `action.yml` wraps it as a GitHub
+Action. See [the CLI README](packages/cli/README.md).
+
+## Library
+
 After `npm run build`, use the library from an ESM script:
 
 ```js
@@ -32,9 +48,14 @@ console.log(JSON.stringify({
 
 See [the analyzer API and rule boundaries](packages/analyzer/README.md),
 [corpus assumptions](corpus/README.md), and [parser build instructions](grammar/README.md).
-Findings are static evidence, not reproduced exploits. The attack harness,
-product CLI/SARIF, registry contract and CI are separate project tasks.
+Findings are static evidence, not reproduced exploits.
+
+## Registry contract
+
+[contracts/registry](contracts/registry/README.md) is a Compact contract that
+records scan attestations on Midnight: public finding counts per contract, with
+the full report kept private behind a commitment that the attester can reveal.
 
 The analyzer is a bounded heuristic analysis, not a proof of security. Review
-coverage diagnostics alongside findings. Corpus parsing is tested; compilation
-with a Compact compiler is still pending on this Windows host.
+coverage diagnostics alongside findings. All corpus contracts compile with
+compiler 0.31.1 (`scripts/compile-corpus.sh`, run inside WSL on Windows).
