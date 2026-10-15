@@ -59,3 +59,7 @@ the full report kept private behind a commitment that the attester can reveal.
 The analyzer is a bounded heuristic analysis, not a proof of security. Review
 coverage diagnostics alongside findings. All corpus contracts compile with
 compiler 0.31.1 (`scripts/compile-corpus.sh`, run inside WSL on Windows).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Compact syntax for compact-guard; portable WASM runtime",
+  "license": "Apache-2.0",
   "scripts": {
     "generate": "tree-sitter generate",
     "build": "tree-sitter build --wasm",
