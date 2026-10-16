@@ -1,0 +1,13 @@
+{
+  "network": "preprod",
+  "contractAddress": "e27624e00a5f3a1fcc64f1b370aaea3f5d028eb9fb4be92ff852dbb44be24538",
+  "txId": "00ab7c4bcd0cf6bd13ca528c7b162cc881d4324ac3044eb9fab5adf1067f65926d",
+  "blockHeight": 3005143,
+  "deployedAt": "2026-10-16T11:05:36.017Z",
+  "compiler": "0.31.1",
+  "midnightJs": "4.1.1",
+  "explorers": [
+    "https://preprod.midnightexplorer.com/",
+    "https://midnight-preprod.subscan.io/"
+  ]
+}

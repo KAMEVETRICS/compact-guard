@@ -1,0 +1,27 @@
+{
+  "name": "compact-guard-registry-deploy",
+  "private": true,
+  "type": "module",
+  "description": "Deploys the compact-guard registry contract to Midnight Preprod.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "deploy:preprod": "node deploy.mjs",
+    "verify:preprod": "node verify.mjs"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-utils": "4.1.1",
+    "@midnightntwrk/wallet-sdk": "1.2.0",
+    "rxjs": "^7.8.1",
+    "ws": "^8.19.0"
+  },
+  "overrides": {
+    "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"
+  }
+}

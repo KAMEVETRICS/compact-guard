@@ -1,0 +1,10 @@
+# Allow-list: this folder also holds the wallet seed (.env.preprod), the
+# private-state store with the contract's maintenance key, and a copy of the
+# compiler output. Only the script and its manifests are committed.
+*
+!.gitignore
+!package.json
+!package-lock.json
+!deploy.mjs
+!README.md
+!verify.mjs

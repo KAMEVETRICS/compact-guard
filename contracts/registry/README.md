@@ -57,4 +57,61 @@ hiding and unlinkability, `isClean`, and the reveal flow, including rejected rev
 
 Compiler output goes to `src/managed/` and is not committed.
 
-Not yet done: deployment to Preprod and a DApp front end.
+## Deployment
+
+Deployed to **Midnight Preprod** on 16 October 2026:
+
+| | |
+| --- | --- |
+| Contract address | `e27624e00a5f3a1fcc64f1b370aaea3f5d028eb9fb4be92ff852dbb44be24538` |
+| Deploy transaction | `00ab7c4bcd0cf6bd13ca528c7b162cc881d4324ac3044eb9fab5adf1067f65926d` |
+| Block | 3,005,143 |
+
+Search for the address on [Midnight Explorer](https://preprod.midnightexplorer.com/)
+or [Subscan](https://midnight-preprod.subscan.io/). The record is in
+`deployments/preprod.json`. `cd deploy && npm run verify:preprod` reads the
+contract's public state back from the indexer.
+
+## Deploy to Preprod
+
+`deploy/deploy.mjs` follows Midnight's
+[deploy guide](https://docs.midnight.network/guides/deploy-and-operate) with
+Midnight.js 4.1.1 and wallet SDK 1.2.0. It needs:
+
+1. **Proving keys:** `npm run compile:keys -w contracts/registry`.
+2. **A local proof server** (Docker):
+   `docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3 midnight-proof-server -v`
+3. **A Blockfrost project for Midnight Preprod.** Midnight's own Preprod endpoints
+   shut down on 9 October 2026; Blockfrost now serves the Preprod indexer and RPC.
+   Put the project ID in `deploy/.env.preprod`:
+   `BLOCKFROST_PROJECT_ID=nightpreprod...`
+
+Then:
+
+```sh
+cd contracts/registry/deploy
+npm install
+npm run deploy:preprod
+```
+
+On first run the script generates a wallet seed, the registry admin secret and
+a private-state password, and saves them to `deploy/.env.preprod` without
+printing them. It prints the wallet's unshielded address: request tNIGHT for it
+at the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/). The
+script waits for the tokens, syncs the wallet, registers the NIGHT for DUST
+generation to pay fees, deploys, and writes the address to
+`deployments/preprod.json`.
+
+A fresh Preprod wallet sync is slow (about 4 hours of awake time for us), so the
+script saves sync state to `deploy/wallet-state.json` every five minutes and
+resumes from it on the next run. If sync makes no progress for 10 minutes, or an
+indexer error surfaces before the deploy step, it saves state and exits with
+code 75; run it in a loop that restarts on 75. An error during the deploy step
+itself exits with 1 and is not retried, so a second contract is never deployed
+by accident.
+
+Back up `deploy/.env.preprod` and the private-state store the script creates
+in `deploy/`. They hold the admin secret and the contract's maintenance key.
+`deploy/.gitignore` keeps everything except the script out of git.
+
+Not yet done: a DApp front end.
