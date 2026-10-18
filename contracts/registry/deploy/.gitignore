@@ -8,3 +8,6 @@
 !deploy.mjs
 !README.md
 !verify.mjs
+!session.mjs
+!attest.mjs
+!server.mjs

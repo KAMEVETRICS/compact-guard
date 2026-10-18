@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "compact-guard",
+          "version": "0.1.0",
+          "rules": [
+            {
+              "id": "CG001",
+              "name": "Authorization via ownPublicKey()",
+              "shortDescription": {
+                "text": "Authorization via ownPublicKey()"
+              },
+              "fullDescription": {
+                "text": "ownPublicKey() is a witness: the prover chooses its value, so checks built on it can be bypassed. Authorize by proving knowledge of a secret."
+              },
+              "helpUri": "https://docs.midnight.network/compact/smart-contract-security#ownpublickey-is-a-witness-function",
+              "help": {
+                "text": "ownPublicKey() is a witness: the prover chooses its value, so checks built on it can be bypassed. Authorize by proving knowledge of a secret. See https://docs.midnight.network/compact/smart-contract-security#ownpublickey-is-a-witness-function"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "CG002",
+              "name": "Guessable hash of a low-entropy value",
+              "shortDescription": {
+                "text": "Guessable hash of a low-entropy value"
+              },
+              "fullDescription": {
+                "text": "Hashing a private value from a small domain (Boolean, enum, small Uint) without randomness lets anyone recover it by hashing every candidate."
+              },
+              "helpUri": "https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#hashes-and-commitments",
+              "help": {
+                "text": "Hashing a private value from a small domain (Boolean, enum, small Uint) without randomness lets anyone recover it by hashing every candidate. See https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#hashes-and-commitments"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "CG003",
+              "name": "Reused or public commitment randomness",
+              "shortDescription": {
+                "text": "Reused or public commitment randomness"
+              },
+              "fullDescription": {
+                "text": "Commitments that share randomness, or use constant or public randomness, can be linked or opened by observers."
+              },
+              "helpUri": "https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#randomness-and-rounds-in-commitments",
+              "help": {
+                "text": "Commitments that share randomness, or use constant or public randomness, can be linked or opened by observers. See https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#randomness-and-rounds-in-commitments"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "CG004",
+              "name": "Private value used as a public Set/Map key",
+              "shortDescription": {
+                "text": "Private value used as a public Set/Map key"
+              },
+              "fullDescription": {
+                "text": "Set and Map operations publish their arguments. Membership keyed on private data exposes or links it; a MerkleTree proves membership without revealing which entry."
+              },
+              "helpUri": "https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#making-use-of-merkle-trees",
+              "help": {
+                "text": "Set and Map operations publish their arguments. Membership keyed on private data exposes or links it; a MerkleTree proves membership without revealing which entry. See https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#making-use-of-merkle-trees"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "CG005",
+              "name": "Merkle path not bound to the caller's leaf",
+              "shortDescription": {
+                "text": "Merkle path not bound to the caller's leaf"
+              },
+              "fullDescription": {
+                "text": "A witness-supplied Merkle path proves that some leaf is in the tree, not that the caller's leaf is, unless the path leaf is checked against a recomputed or trusted value."
+              },
+              "helpUri": "https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#making-use-of-merkle-trees",
+              "help": {
+                "text": "A witness-supplied Merkle path proves that some leaf is in the tree, not that the caller's leaf is, unless the path leaf is checked against a recomputed or trusted value. See https://docs.midnight.network/concepts/how-midnight-works/keeping-data-private#making-use-of-merkle-trees"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "CG006",
+              "name": "Hash without domain separation",
+              "shortDescription": {
+                "text": "Hash without domain separation"
+              },
+              "fullDescription": {
+                "text": "Hash inputs without a distinct literal domain tag can collide across different uses of the same primitive."
+              },
+              "helpUri": "https://docs.midnight.network/compact/smart-contract-security#best-practice-use-domain-separation",
+              "help": {
+                "text": "Hash inputs without a distinct literal domain tag can collide across different uses of the same primitive. See https://docs.midnight.network/compact/smart-contract-security#best-practice-use-domain-separation"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "CG007",
+              "name": "Whole private aggregate disclosed",
+              "shortDescription": {
+                "text": "Whole private aggregate disclosed"
+              },
+              "fullDescription": {
+                "text": "disclose() around a whole struct or tuple publishes every field; disclose only the fields that must be public."
+              },
+              "helpUri": "https://docs.midnight.network/compact/smart-contract-security#best-practice-place-disclose-strategically",
+              "help": {
+                "text": "disclose() around a whole struct or tuple publishes every field; disclose only the fields that must be public. See https://docs.midnight.network/compact/smart-contract-security#best-practice-place-disclose-strategically"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "CG008",
+              "name": "One-time action without a nullifier",
+              "shortDescription": {
+                "text": "One-time action without a nullifier"
+              },
+              "fullDescription": {
+                "text": "A circuit declared one-time has no recognized nullifier absence check followed by insertion, so it can be replayed."
+              },
+              "helpUri": "https://docs.midnight.network/compact/smart-contract-security#double-spend-prevention-with-nullifiers",
+              "help": {
+                "text": "A circuit declared one-time has no recognized nullifier absence check followed by insertion, so it can be replayed. See https://docs.midnight.network/compact/smart-contract-security#double-spend-prevention-with-nullifiers"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "SRCROOT": {
+          "uri": "file:///compact-guard/"
+        }
+      },
+      "columnKind": "utf16CodeUnits",
+      "results": [
+        {
+          "ruleId": "CG004",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "An explicitly disclosed circuit input is used as a public membership key; confirm this disclosure is intended. Evidence: Entry circuits: attest. attest; Bytes<32>: argument attest.contractHash; domain <= 2^0; via disclose"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "contracts/registry/src/registry.compact",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 69,
+                  "startColumn": 7
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "compactGuardFindingHash/v1": "07cd8ef5ad4d2c4ef7f0f0bbce758ae4"
+          },
+          "properties": {
+            "severity": "review",
+            "circuit": "attest",
+            "evidenceKind": "static"
+          }
+        },
+        {
+          "ruleId": "CG004",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "An explicitly disclosed circuit input is used as a public membership key; confirm this disclosure is intended. Evidence: Entry circuits: revealReport. revealReport; Bytes<32>: argument revealReport.contractHash; domain <= 2^0; via disclose"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "contracts/registry/src/registry.compact",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 86,
+                  "startColumn": 10
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "compactGuardFindingHash/v1": "8645f551e701e95a0d3c7685ace4a876"
+          },
+          "properties": {
+            "severity": "review",
+            "circuit": "revealReport",
+            "evidenceKind": "static"
+          }
+        },
+        {
+          "ruleId": "CG004",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "An explicitly disclosed circuit input is used as a public membership key; confirm this disclosure is intended. Evidence: Entry circuits: revealReport. revealReport; Bytes<32>: argument revealReport.contractHash; domain <= 2^0; via disclose"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "contracts/registry/src/registry.compact",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 87,
+                  "startColumn": 18
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "compactGuardFindingHash/v1": "8645f551e701e95a0d3c7685ace4a876"
+          },
+          "properties": {
+            "severity": "review",
+            "circuit": "revealReport",
+            "evidenceKind": "static"
+          }
+        },
+        {
+          "ruleId": "CG004",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "An explicitly disclosed circuit input is used as a public membership key; confirm this disclosure is intended. Evidence: Entry circuits: isClean. isClean; Bytes<32>: argument isClean.contractHash; domain <= 2^0; via disclose"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "contracts/registry/src/registry.compact",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 97,
+                  "startColumn": 8
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "compactGuardFindingHash/v1": "7e2666cda23aa58834d75c77b9f18f38"
+          },
+          "properties": {
+            "severity": "review",
+            "circuit": "isClean",
+            "evidenceKind": "static"
+          }
+        },
+        {
+          "ruleId": "CG004",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "An explicitly disclosed circuit input is used as a public membership key; confirm this disclosure is intended. Evidence: Entry circuits: isClean. isClean; Bytes<32>: argument isClean.contractHash; domain <= 2^0; via disclose"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "contracts/registry/src/registry.compact",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 100,
+                  "startColumn": 18
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "compactGuardFindingHash/v1": "7e2666cda23aa58834d75c77b9f18f38"
+          },
+          "properties": {
+            "severity": "review",
+            "circuit": "isClean",
+            "evidenceKind": "static"
+          }
+        }
+      ],
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": [
+            {
+              "level": "warning",
+              "message": {
+                "text": "Ledger operation remove is modeled as an opaque effect."
+              },
+              "descriptor": {
+                "id": "ledger-operation"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "contracts/registry/src/registry.compact",
+                      "uriBaseId": "SRCROOT"
+                    },
+                    "region": {
+                      "startLine": 53,
+                      "startColumn": 3
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "level": "warning",
+              "message": {
+                "text": "Ledger operation remove is modeled as an opaque effect."
+              },
+              "descriptor": {
+                "id": "ledger-operation"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "contracts/registry/src/registry.compact",
+                      "uriBaseId": "SRCROOT"
+                    },
+                    "region": {
+                      "startLine": 70,
+                      "startColumn": 5
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "level": "warning",
+              "message": {
+                "text": "Ledger operation increment is modeled as an opaque effect."
+              },
+              "descriptor": {
+                "id": "ledger-operation"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "contracts/registry/src/registry.compact",
+                      "uriBaseId": "SRCROOT"
+                    },
+                    "region": {
+                      "startLine": 80,
+                      "startColumn": 3
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -4,8 +4,18 @@ compact-guard is a security checker for Midnight Compact contracts. The Compact
 compiler already refuses code that leaks private data without `disclose()`.
 compact-guard looks for what the compiler can't: disclosures, hashes,
 commitments and access checks that compile fine but are unsafe. It runs from the
-command line or in GitHub CI, and scan results can be recorded on Midnight
-through a registry contract.
+command line, in GitHub CI and in a web UI, and its results are recorded on
+Midnight in a registry contract that is live on Preprod with 11 attestations.
+
+**Who it's for.** Every team building on Midnight, before they deploy; auditors
+who want to publish what they checked; and users or investors who want to know
+whether a contract was scanned, and with what result.
+
+**Why it needs Midnight's privacy.** A security report is dangerous to publish
+before its bugs are fixed. The registry stores public finding counts and only a
+commitment to the full report, so a project can prove it was scanned without
+exposing unfixed vulnerabilities. The attester can reveal the report later and
+prove it is the one committed to on-chain.
 
 This is a new project, started in Wave 2. Everything below was built during the
 Wave 2 build period.
@@ -58,28 +68,43 @@ and the tool version. The full report stays off-chain behind a
   inside the circuit, never with `ownPublicKey()`.
 - Hashes are domain-separated, and every commitment uses fresh randomness.
 - 5 circuits plus a pure helper. It compiles with proving keys.
+- `src/witnesses.ts` implements the witnesses and the private state (secret key
+  and per-contract report openings), shared by the tests and the deploy scripts.
 - compact-guard scans its own registry with 0 errors, 0 warnings and 5 review
   notes, all on the contract hash, which is public by design.
 
-**Deployed to Midnight Preprod.** Contract address
-`e27624e00a5f3a1fcc64f1b370aaea3f5d028eb9fb4be92ff852dbb44be24538`, deploy
-transaction `00ab7c4bcd0cf6bd13ca528c7b162cc881d4324ac3044eb9fab5adf1067f65926d`
-at block 3,005,143. Reading the contract back through the Preprod indexer shows
-the admin key set and an empty registry. The deploy script follows Midnight's
-deploy guide with Midnight.js 4.1.1. Because a fresh Preprod wallet sync took
-hours on our connection, the script saves wallet sync state every five minutes,
-resumes from it after an interruption, and restarts automatically if the
-indexer connection stalls.
+**Deployed to Midnight Preprod, with real attestations.** Contract address
+`e27624e00a5f3a1fcc64f1b370aaea3f5d028eb9fb4be92ff852dbb44be24538`, deployed
+at block 3,005,143. It holds 11 attestations, each a real compact-guard scan:
+the registry itself, Midnight's bulletin board example, the six contract
+examples from the Midnight docs, and three test contracts (two deliberately
+vulnerable, so they show as having issues). The registry's own report is revealed
+on-chain (block 3,039,250), and its SARIF is in
+`contracts/registry/deployments/reports/registry.sarif`; its SHA-256 matches
+the revealed value. Every transaction and block is listed in
+`contracts/registry/deployments/preprod-attestations.json`.
+
+The deploy and attest scripts follow Midnight's deploy guide with Midnight.js
+4.1.1. A fresh Preprod wallet sync took hours on our connection, so they save
+wallet sync state every five minutes, resume from it, and restart automatically
+when the indexer connection stalls or returns a transient error.
+
+**Web UI.** A React app backed by a small local API. Paste or drop a Compact
+contract to see its findings, each linked to the Midnight docs, and whether that
+exact source is attested on-chain. The table lists every attestation read live
+from the Preprod indexer: finding counts, clean or not, and whether the report
+is private or revealed.
 
 ## Testing
 
-- 41 analyzer tests, 12 CLI tests, 9 registry contract tests and 11 parser
-  tests, all passing on a clean checkout.
-- The registry tests run the compiled contract off-chain through
-  `@midnight-ntwrk/compact-runtime`. They cover admin and attester authorization,
-  rejected callers, commitment hiding and the reveal flow. As a check on the
-  tests themselves, deleting the attester check from the contract makes the
-  matching test fail.
+- 41 analyzer tests, 12 CLI tests, 10 registry contract tests and 11 parser
+  tests, all passing.
+- The registry tests drive the compiled contract through a simulator
+  (`src/test/registry-simulator.ts`) on `@midnight-ntwrk/compact-runtime`. They
+  cover admin and attester authorization, rejected callers, commitment hiding and
+  unlinkability, the reveal flow and domain separation between key roles. As a
+  check on the tests themselves, deleting the attester check from the contract
+  makes the matching test fail.
 
 ## Limits
 
@@ -87,9 +112,13 @@ indexer connection stalls.
   contract is safe.
 - It does not follow imports across files yet.
 - It runs from a clone of the repo; it is not published to npm yet.
+- The web UI runs locally, because reading Preprod through Blockfrost needs a
+  project token that must not ship to browsers.
+- One attester today (us). Adding attesters is an admin call the contract
+  already supports.
 
 ## Next, for Wave 3
 
-- `compact-guard attest`: publish a scan result to the registry from the CLI or CI.
-- A small web page to look up a contract's attestation.
+- Publish attestations straight from CI, so every merge to main is attested.
+- Host the lookup page publicly.
 - Cross-file analysis and more rules.

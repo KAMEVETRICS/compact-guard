@@ -55,6 +55,8 @@ Findings are static evidence, not reproduced exploits.
 [contracts/registry](contracts/registry/README.md) is a Compact contract that
 records scan attestations on Midnight: public finding counts per contract, with
 the full report kept private behind a commitment that the attester can reveal.
+It is deployed on Midnight Preprod and holds real attestations; its React UI
+scans a pasted contract and shows whether that source is attested on-chain.
 
 The analyzer is a bounded heuristic analysis, not a proof of security. Review
 coverage diagnostics alongside findings. All corpus contracts compile with

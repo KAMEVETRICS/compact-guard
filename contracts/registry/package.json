@@ -9,7 +9,8 @@
     "build": "node scripts/compile.mjs",
     "compile": "node scripts/compile.mjs",
     "compile:keys": "node scripts/compile.mjs --keys",
-    "test": "node scripts/compile.mjs && node --test test/*.test.mjs"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node scripts/compile.mjs && tsc -p tsconfig.json && node --test src/test/*.test.ts"
   },
   "dependencies": { "@midnight-ntwrk/compact-runtime": "0.16.0" }
 }

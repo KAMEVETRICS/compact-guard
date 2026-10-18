@@ -46,14 +46,21 @@ install it with `scripts/setup-wsl.sh` at the repository root.
 ```sh
 npm run compile -w contracts/registry       # compile without proving keys (fast)
 npm run compile:keys -w contracts/registry  # also generate proving keys (~2 min), needed to deploy
-npm test -w contracts/registry              # compile, then run the unit tests
+npm test -w contracts/registry              # compile, type-check, run the simulator tests
 ```
 
-Tests run the compiled contract off-chain through `@midnight-ntwrk/compact-runtime`
-0.16.0, following Midnight's
-[JavaScript runtime guide](https://docs.midnight.network/guides/compact-javascript-runtime).
-They cover admin and attester authorization, attestation contents, commitment
-hiding and unlinkability, `isClean`, and the reveal flow, including rejected reveals.
+Layout, following Midnight's example-bboard:
+
+| File | Role |
+| --- | --- |
+| `src/registry.compact` | The contract |
+| `src/witnesses.ts` | Witness implementations and the private state type (secret key, per-contract report openings), shared by the tests and the Preprod scripts |
+| `src/test/registry-simulator.ts` | Runs the compiled contract off-chain through `@midnight-ntwrk/compact-runtime` 0.16.0, following the [JavaScript runtime guide](https://docs.midnight.network/guides/compact-javascript-runtime) |
+| `src/test/registry.test.ts` | 10 tests: admin and attester authorization, attestation contents, commitment hiding and unlinkability, `isClean`, the reveal flow including rejected reveals, and domain separation between admin and attester keys |
+
+Node.js 22.18 or later runs the TypeScript files directly. The `npm test` script
+compiles without proving keys, which removes `src/managed/registry/keys`; run
+`compile:keys` again before deploying or attesting.
 
 Compiler output goes to `src/managed/` and is not committed.
 
@@ -112,6 +119,40 @@ by accident.
 
 Back up `deploy/.env.preprod` and the private-state store the script creates
 in `deploy/`. They hold the admin secret and the contract's maintenance key.
-`deploy/.gitignore` keeps everything except the script out of git.
+`deploy/.gitignore` keeps everything except the scripts out of git.
 
-Not yet done: a DApp front end.
+The wallet, sync, restart and fee logic shared by the Preprod scripts lives in
+`deploy/session.mjs`.
+
+## Publishing attestations
+
+`deploy/attest.mjs` scans contracts with compact-guard and records the results
+in the deployed registry. It registers the wallet as an attester (the admin
+secret also yields a separate, domain-separated attester key), then for each
+target computes the source hash, runs the CLI for a SARIF report, and calls
+`attest` with the finding counts and the report hash, using a fresh commitment
+opening each time. Reports stay in `deploy/reports/` (gitignored). It then
+reveals the registry's own report on-chain and publishes that SARIF in
+`deployments/reports/registry.sarif`, so anyone can hash it and compare.
+Attestations already on-chain with the same counts are skipped, so it is safe to
+rerun. The public summary is `deployments/preprod-attestations.json`.
+
+```sh
+cd contracts/registry/deploy
+node attest.mjs
+```
+
+## Web UI
+
+`ui/` is a React app; `deploy/server.mjs` serves it with a small API that reads
+the live registry from the Preprod indexer and runs compact-guard on submitted
+source. The Blockfrost token stays in the server, which listens on localhost only.
+
+```sh
+cd contracts/registry/ui && npm install && npm run build
+cd ../deploy && node server.mjs        # http://localhost:5180
+```
+
+Paste or drop a `.compact` file to see its findings and whether its source hash
+is attested on-chain; the attestation table lists every contract in the
+registry, its counts, and whether its report is private or revealed.

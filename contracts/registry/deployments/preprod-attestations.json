@@ -1,0 +1,125 @@
+{
+  "network": "preprod",
+  "contractAddress": "e27624e00a5f3a1fcc64f1b370aaea3f5d028eb9fb4be92ff852dbb44be24538",
+  "tool": "compact-guard 0.1.0",
+  "toolVersionHash": "40db1cb2e1c640b12a966e7490f0e401f7065937f280962e8d03f6b5c44cb83f",
+  "attester": "fee78c3205f93fcb6b68f6d4553ffca767691b33baf1f5e09c43938bdc7525a5",
+  "updatedAt": "2026-10-18T19:55:56.637Z",
+  "revealed": {
+    "path": "contracts/registry/src/registry.compact",
+    "contractHash": "d2ef4ef87e0bd5bda284a8278cff92112fe921d3c10538e75477d6dd0462d212",
+    "sarif": "deployments/reports/registry.sarif"
+  },
+  "attestations": [
+    {
+      "label": "compact-guard registry (this contract)",
+      "path": "contracts/registry/src/registry.compact",
+      "contractHash": "d2ef4ef87e0bd5bda284a8278cff92112fe921d3c10538e75477d6dd0462d212",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 5,
+      "blockHeight": 3039081,
+      "txId": "000eddc45a271e86a804edf389217831f289eaad17d14be2adba1f7942d433a7c5"
+    },
+    {
+      "label": "Midnight example: bulletin board",
+      "path": "packages/analyzer/test/fixtures/official/example-bboard.compact",
+      "contractHash": "87f12ae6378bd54965571e48fecc68bddf6f7477176ff1c5f7d432165f73d7a0",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 0,
+      "blockHeight": 3039088,
+      "txId": "00b74edae98c8430701babb6cf6813065d29f4f0e3eee11d77d85edd6b87ad6208"
+    },
+    {
+      "label": "Midnight docs: election",
+      "path": "packages/analyzer/test/fixtures/official/election.compact",
+      "contractHash": "ac01567af7341d793458b2392fe68f91bb687072fbdf1b8ceb9353cb837ee068",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 7,
+      "blockHeight": 3039096,
+      "txId": "0038f11bcf3fcf247496c45561b8543dba7b19185dd9831ef2b7c5b3c1a3c8ab38"
+    },
+    {
+      "label": "Midnight docs: private guest list",
+      "path": "packages/analyzer/test/fixtures/official/private-guest-list.compact",
+      "contractHash": "d723482d984402e79f2333ce334127204f10a791ba01b3f2f214a9c0f15fb235",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 1,
+      "blockHeight": 3039104,
+      "txId": "00883a1f8eba08c02e65ac1108116a656ad9bcd70a8de9f24f345296400c0218d1"
+    },
+    {
+      "label": "Midnight docs: private reserve auction",
+      "path": "packages/analyzer/test/fixtures/official/private-reserve-auction.compact",
+      "contractHash": "1e74259e86be6996745f3ec6149589ede3284e0174140c58eff01dcc7c595a22",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 1,
+      "blockHeight": 3039113,
+      "txId": "004b27ab1b2773b806f5183ab5fb9e4349f8d343ec70b788fdc1e2a72bfdfde3eb"
+    },
+    {
+      "label": "Midnight docs: battleship",
+      "path": "packages/analyzer/test/fixtures/official/battleship-simple.compact",
+      "contractHash": "a3057f354bfe07d7c23a35af273793a01a605fb402ecc81b925c7562f1420ed0",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 3,
+      "blockHeight": 3039120,
+      "txId": "0079ba0ee8e76270b699ea56875d9de7431b4209de69dde403f14c30235209ab18"
+    },
+    {
+      "label": "Midnight docs: calculator",
+      "path": "packages/analyzer/test/fixtures/official/calculator.compact",
+      "contractHash": "48e2caff1912dcbfe37a732b2f1e62299a8f34abc38236fd0e8e3536b1295b23",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 0,
+      "blockHeight": 3039128,
+      "txId": "00db972b69e4a0d41232c69d06fee54cab0e2ab99afcb1e32be7c582ca5ca63b37"
+    },
+    {
+      "label": "Midnight docs: token transfers",
+      "path": "packages/analyzer/test/fixtures/official/token-transfers.compact",
+      "contractHash": "68823610369d90e1f018b20ba8b366cb6ea2a955210002f299940271ad2155e8",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 0,
+      "blockHeight": 3039134,
+      "txId": "00ac8c3b94ae578fafd66aa0828efeba5208e2e495c947f7b3fde6cf15d4b9b8e4"
+    },
+    {
+      "label": "Test contract CG001, deliberately vulnerable",
+      "path": "corpus/CG001/vulnerable.compact",
+      "contractHash": "196851757b036bdad62c57d9e54c380f0ac5dd5fcc01531987255e0572a8f65f",
+      "errors": 0,
+      "warnings": 1,
+      "reviews": 0,
+      "blockHeight": 3039141,
+      "txId": "00e9ecee1575ca206a90108256ad9a811c5fb7d6f75296691e8b1339b21b9a85cd"
+    },
+    {
+      "label": "Test contract CG001, fixed",
+      "path": "corpus/CG001/fixed.compact",
+      "contractHash": "902e71876e6ca5bc70f8e1af638d9cb1389b269f3ded2f4707b46a380285388e",
+      "errors": 0,
+      "warnings": 0,
+      "reviews": 0,
+      "txId": "002de7701bce9915fb62ea52065a2c8e7101f565580fb866b8b4ea808f7b1c8dc6",
+      "blockHeight": 3039237
+    },
+    {
+      "label": "Test contract CG002, deliberately vulnerable",
+      "path": "corpus/CG002/vulnerable.compact",
+      "contractHash": "fd0a20ba53730ecd09a22c260a47ffca0be74671d3a6da0ea63d6461d7bfad54",
+      "errors": 0,
+      "warnings": 1,
+      "reviews": 1,
+      "txId": "007aac668e8995e68e60ac23e7df1943246a96137f36d88587537d5287722a12bb",
+      "blockHeight": 3039244
+    }
+  ]
+}
