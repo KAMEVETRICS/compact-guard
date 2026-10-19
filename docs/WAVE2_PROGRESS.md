@@ -4,8 +4,9 @@ compact-guard is a security checker for Midnight Compact contracts. The Compact
 compiler already refuses code that leaks private data without `disclose()`.
 compact-guard looks for what the compiler can't: disclosures, hashes,
 commitments and access checks that compile fine but are unsafe. It runs from the
-command line, in GitHub CI and in a web UI, and its results are recorded on
-Midnight in a registry contract that is live on Preprod with 11 attestations.
+command line, in GitHub CI and in a web UI (live at
+https://compact-guard.onrender.com), and its results are recorded on Midnight in
+a registry contract that is live on Preprod with 11 attestations.
 
 **Who it's for.** Every team building on Midnight, before they deploy; auditors
 who want to publish what they checked; and users or investors who want to know
@@ -89,11 +90,12 @@ The deploy and attest scripts follow Midnight's deploy guide with Midnight.js
 wallet sync state every five minutes, resume from it, and restart automatically
 when the indexer connection stalls or returns a transient error.
 
-**Web UI.** A React app backed by a small local API. Paste or drop a Compact
-contract to see its findings, each linked to the Midnight docs, and whether that
-exact source is attested on-chain. The table lists every attestation read live
-from the Preprod indexer: finding counts, clean or not, and whether the report
-is private or revealed.
+**Web UI, live at https://compact-guard.onrender.com.** A React app backed by
+a small API. Paste or drop a Compact contract to see its findings, each linked to
+the Midnight docs, and whether that exact source is attested on-chain. The table
+lists every attestation read live from the Preprod indexer: finding counts, clean
+or not, and whether the report is private or revealed. The Blockfrost token stays
+on the server; scans are rate-limited and registry reads are cached.
 
 ## Testing
 
@@ -112,13 +114,11 @@ is private or revealed.
   contract is safe.
 - It does not follow imports across files yet.
 - It runs from a clone of the repo; it is not published to npm yet.
-- The web UI runs locally, because reading Preprod through Blockfrost needs a
-  project token that must not ship to browsers.
 - One attester today (us). Adding attesters is an admin call the contract
   already supports.
 
 ## Next, for Wave 3
 
 - Publish attestations straight from CI, so every merge to main is attested.
-- Host the lookup page publicly.
+- Show a contract's attestation status in wallets and explorers.
 - Cross-file analysis and more rules.

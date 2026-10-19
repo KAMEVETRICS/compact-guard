@@ -2,6 +2,7 @@
 
 The web UI (`contracts/registry/ui`) plus a read-only API over the registry
 contract on Midnight Preprod, in one small Node server (`server.mjs`).
+Live at **https://compact-guard.onrender.com** (Render).
 
 | Route | What it does |
 | --- | --- |

@@ -1,5 +1,8 @@
 # compact-guard
 
+**Live site: https://compact-guard.onrender.com** · scan a contract and browse
+the registry's on-chain attestations on Midnight Preprod.
+
 Static security checks for Midnight Compact contracts. The parser follows the
 published Compact grammar (0.26.0 and later) and runs through `web-tree-sitter`
 and the committed WASM. Contracts in this repo target language 0.23, the version
