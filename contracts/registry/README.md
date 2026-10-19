@@ -144,14 +144,10 @@ node attest.mjs
 
 ## Web UI
 
-`ui/` is a React app; `deploy/server.mjs` serves it with a small API that reads
-the live registry from the Preprod indexer and runs compact-guard on submitted
-source. The Blockfrost token stays in the server, which listens on localhost only.
-
-```sh
-cd contracts/registry/ui && npm install && npm run build
-cd ../deploy && node server.mjs        # http://localhost:5180
-```
+`ui/` is a React app. The server in [`site/`](../../site/README.md) at the
+repository root serves it with a small API that reads the live registry from the
+Preprod indexer and runs compact-guard on submitted source; the Blockfrost token
+stays in the server. The same server runs locally and on a host such as Render.
 
 Paste or drop a `.compact` file to see its findings and whether its source hash
 is attested on-chain; the attestation table lists every contract in the

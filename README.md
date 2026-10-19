@@ -57,6 +57,7 @@ records scan attestations on Midnight: public finding counts per contract, with
 the full report kept private behind a commitment that the attester can reveal.
 It is deployed on Midnight Preprod and holds real attestations; its React UI
 scans a pasted contract and shows whether that source is attested on-chain.
+[site/](site/README.md) serves the UI and its API, locally or on a Node host.
 
 The analyzer is a bounded heuristic analysis, not a proof of security. Review
 coverage diagnostics alongside findings. All corpus contracts compile with
